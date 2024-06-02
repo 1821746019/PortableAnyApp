@@ -1,0 +1,6 @@
+﻿*.pdb
+*.idb
+build/
+_insight/
+.vs/
+!.vs/**/*.json
