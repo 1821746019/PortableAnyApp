@@ -1,6 +1,7 @@
 ﻿*.pdb
 *.idb
 build/
-_insight/
-.vs/
-!.vs/**/*.json
+_insights/
+
+.vs/*
+!.vs/launch.vs.json
