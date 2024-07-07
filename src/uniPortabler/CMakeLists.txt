@@ -13,6 +13,7 @@ ${CMAKE_COMMAND} -E copy
 $<TARGET_FILE:${lib_name}> 
 "D:\\Program Files\\安卓模拟\\LDPlayer_v9.0.71\\App"
 "D:\\Users\\Administrator\\Desktop\\repository\\离线网页\\##miscellaneous\\#windows相关\\打开资源管理器让用户选择文件\\App32"
+"D:\\Program Files\\JianyingPro\\5\\5.0.0.10938\\App"
 #"D:\\Users\\Administrator\\Desktop\\repository\\离线网页\\##miscellaneous\\#windows相关\\打开资源管理器让用户选择文件\\App"
 
 )

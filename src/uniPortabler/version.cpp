@@ -17,7 +17,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 	case DLL_PROCESS_ATTACH:
 	{
 		DisableThreadLibraryCalls(hModule);
-
+#ifdef BS_DBG
+		MessageBeep(MB_ICONINFORMATION);
+#endif
+		
 
 		fs_core_init(findConfigPath());
 		MessageBeep(MB_ICONINFORMATION);

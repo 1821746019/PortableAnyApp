@@ -4,5 +4,4 @@ build/
 _insights/
 
 .vs/*
-!.vs/launch.vs.json
-/.vs/launch.vs.json
+
