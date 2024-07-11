@@ -17,6 +17,7 @@ struct JudgeContext
 	JudgeContextFlag flag;
 	const wstring* matched = nullptr;
 	int offset = 0;
+
 };
 
 void PathJudge::_init_(const FsConfig& fs_config)

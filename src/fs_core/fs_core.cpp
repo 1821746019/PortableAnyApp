@@ -5,7 +5,7 @@ import func2hook.kernelbase;
 import MacroMgr;
 import ConfigMgr;
 import fs_common;
-#include <string>
+
 
 #include "PathJudge.h"
 //import func2hook.maybe;

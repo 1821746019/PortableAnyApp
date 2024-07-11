@@ -63,27 +63,5 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo"
       }
     }
-  ],
-  "buildPresets": [
-    {
-      "name": "x64-debug",
-      "configurePreset": "x64-debug",
-      "jobs": 8
-    },
-    {
-      "name": "x64-release",
-      "configurePreset": "x64-release",
-      "jobs": 8
-    },
-    {
-      "name": "x86-debug",
-      "configurePreset": "x86-debug",
-      "jobs": 8
-    },
-    {
-      "name": "x86-release",
-      "configurePreset": "x86-release",
-      "jobs": 8
-    }
   ]
 }
