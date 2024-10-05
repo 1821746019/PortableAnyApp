@@ -1,18 +1,16 @@
 ﻿module;
 
-#include <string>
-#include <unordered_map>
-#include <fstream>
+
 //#include <string>
+//#define TOML_ALL_INLINE 1
 #define TOML_HEADER_ONLY 0
-#include <sstream>
 #include <toml++/toml.hpp>
 export module ConfigMgr;
 import  MacroMgr;
 import fs_common;
 import my_converter.str;
 import FsConfig;
-
+import std;
 
 export class ConfigMgr
 {

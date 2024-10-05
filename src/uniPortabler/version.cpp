@@ -1,12 +1,10 @@
-﻿import fs_common;
-#include <filesystem>
+﻿
 #include <windows.h>
-#include <iostream>
-#include <unordered_map>
-#include <vector>
 
+import fs_common;
+import std;
 
-void fs_core_init(const std::wstring& config_path);
+import I_fs_core;
 using namespace std;
 namespace fs = filesystem;
 

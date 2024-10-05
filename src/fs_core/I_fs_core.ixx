@@ -1,14 +1,22 @@
-﻿
+﻿export module I_fs_core;
+
+
+import std;
 import  Hooker;
 import func2hook;
 import func2hook.kernelbase;
 import MacroMgr;
 import ConfigMgr;
 import fs_common;
+import PathJudge;
 
+export{
 
-#include "PathJudge.h"
-//import func2hook.maybe;
+	void setHook();
+	void fs_core_init(const std::wstring& config_path);
+	void fs_core_uninit();
+}
+
 void setHook()
 {
 	DetoursHooker hooker;
@@ -34,16 +42,16 @@ void setHook()
 void fs_core_init(const std::wstring& config_path)
 {
 	MacroMgr macro_mgr(
-{
-		{L"USER_HOME",getUserHomePath()
-		} }
+		{
+				{L"USER_HOME",getUserHomePath()
+				} }
 	);
-	 ConfigMgr config_mgr(&macro_mgr, config_path);
-	 PathJudge::_init_(config_mgr.fsConfig());
+	ConfigMgr config_mgr(&macro_mgr, config_path);
+	PathJudge::_init_(config_mgr.fsConfig());
 	setHook();
 }
 
 void fs_core_uninit()
 {
-	
+
 }

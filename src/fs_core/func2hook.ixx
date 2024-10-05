@@ -2,11 +2,11 @@
 
 #include <string>
 #include "ntdll.h"
-#include "PathJudge.h"
+
 //#include <NTLib.h>
 export module func2hook;
 
-
+import PathJudge;
 
 
 

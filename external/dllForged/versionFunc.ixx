@@ -1,33 +1,25 @@
 ﻿module;
+
 #include <Windows.h>
 #include <winver.h>
 export module versionFunc;
 
-HMODULE loadVersionDll()
+import std;
+HMODULE loadSysDll(const std::string& sysDllName)
 {
 #ifdef _WIN64
-	auto dll_path = R"(C:\Windows\System32\version.dll)";
+	auto dll_path = R"(C:\Windows\System32\)" + sysDllName;
 #else
-	auto dll_path = R"(C:\Windows\SysWOW64\version.dll)";
+	auto dll_path = R"(C:\Windows\SysWOW64\)" + sysDllName;
 #endif
 
-	//const char
-	//	* path[] = { R"(C:\Windows\SysWOW64\version.dll)", R"(C:\Windows\System32\version.dll)" };
-	//HMODULE ret = LoadLibraryA(path[0]);
-	//ret = ret ? ret : LoadLibraryA(path[1]);
-	auto ret = LoadLibraryA(dll_path);
+	auto ret = LoadLibraryA(dll_path.data());
 	return ret;
 }
-static HMODULE version_dll = loadVersionDll();
-export
-{
-	void init()
-	{
-		loadVersionDll();
-	}
-}
+static HMODULE hDll = loadSysDll("version.dll");
+
 //	auto GetFileVersionInfoByHandle_bridge =
-//		GetProcAddress(version_dll, "GetFileVersionInfoByHandle");
+//		GetProcAddress(hDll, "GetFileVersionInfoByHandle");
 
 
 //decltype(GetFileVersionInfoA)&& GetFileVersionInfoA_bridge = GetFileVersionInfoA;
@@ -39,7 +31,7 @@ BOOL APIENTRY GetFileVersionInfoA_bridge(LPCSTR lptstrFilename,
 {
 	using Func = decltype(&GetFileVersionInfoA);
 	static Func GetFileVersionInfoA = (Func)GetProcAddress
-		(version_dll, "GetFileVersionInfoA");
+		(hDll, "GetFileVersionInfoA");
 	return GetFileVersionInfoA(lptstrFilename, dwHandle, dwLen, lpData);
 }
 
@@ -51,7 +43,7 @@ BOOL APIENTRY GetFileVersionInfoW_bridge(LPCWSTR lptstrFilename,
 {
 	using Func = decltype(&GetFileVersionInfoW);
 	static Func GetFileVersionInfoW = (Func)GetProcAddress
-		(version_dll, "GetFileVersionInfoW");
+		(hDll, "GetFileVersionInfoW");
 	return GetFileVersionInfoW(lptstrFilename, dwHandle, dwLen, lpData);
 }
 
@@ -63,7 +55,7 @@ BOOL APIENTRY GetFileVersionInfoExA_bridge(DWORD dwFlags, LPCSTR lptstrFilename,
 {
 	using Func = decltype(&GetFileVersionInfoExA);
 	static Func GetFileVersionInfoExA = (Func)GetProcAddress
-		(version_dll, "GetFileVersionInfoExA");
+		(hDll, "GetFileVersionInfoExA");
 
 	return GetFileVersionInfoExA(dwFlags, lptstrFilename, dwHandle, dwLen, lpData);
 
@@ -77,7 +69,7 @@ BOOL APIENTRY GetFileVersionInfoExW_bridge(DWORD dwFlags, LPCWSTR lptstrFilename
 {
 	using Func = decltype(&GetFileVersionInfoExW);
 	static Func GetFileVersionInfoExW = (Func)GetProcAddress
-		(version_dll, "GetFileVersionInfoExW");
+		(hDll, "GetFileVersionInfoExW");
 	return GetFileVersionInfoExW(dwFlags, lptstrFilename, dwHandle, dwLen, lpData);
 }
 
@@ -87,7 +79,7 @@ DWORD APIENTRY GetFileVersionInfoSizeA_bridge(LPCSTR lptstrFilename,
 {
 	using Func = decltype(&GetFileVersionInfoSizeA);
 	static Func GetFileVersionInfoSizeA = (Func)GetProcAddress
-		(version_dll, "GetFileVersionInfoSizeA");
+		(hDll, "GetFileVersionInfoSizeA");
 	return GetFileVersionInfoSizeA(lptstrFilename, lpdwHandle);
 }
 
@@ -97,7 +89,7 @@ DWORD APIENTRY GetFileVersionInfoSizeW_bridge(LPCWSTR lptstrFilename,
 {
 	using Func = decltype(&GetFileVersionInfoSizeW);
 	static Func GetFileVersionInfoSizeW = (Func)GetProcAddress
-		(version_dll, "GetFileVersionInfoSizeW");
+		(hDll, "GetFileVersionInfoSizeW");
 	return GetFileVersionInfoSizeW(lptstrFilename, lpdwHandle);
 }
 
@@ -108,7 +100,7 @@ DWORD APIENTRY GetFileVersionInfoSizeExA_bridge(DWORD dwFlags, LPCSTR lptstrFile
 
 	using Func = decltype(&GetFileVersionInfoSizeExA);
 	static Func GetFileVersionInfoSizeExA = (Func)GetProcAddress
-		(version_dll, "GetFileVersionInfoSizeExA");
+		(hDll, "GetFileVersionInfoSizeExA");
 	return GetFileVersionInfoSizeExA(dwFlags, lptstrFilename, lpdwHandle);
 }
 
@@ -118,7 +110,7 @@ DWORD APIENTRY GetFileVersionInfoSizeExW_bridge(DWORD dwFlags, LPCWSTR lptstrFil
 {
 	using Func = decltype(&GetFileVersionInfoSizeExW);
 	static Func GetFileVersionInfoSizeExW = (Func)GetProcAddress
-		(version_dll, "GetFileVersionInfoSizeExW");
+		(hDll, "GetFileVersionInfoSizeExW");
 	return GetFileVersionInfoSizeExW(dwFlags, lptstrFilename, lpdwHandle);
 }
 
@@ -129,7 +121,7 @@ DWORD APIENTRY VerFindFileA_bridge(DWORD uFlags, LPCSTR szFileName,
 {
 	using Func = decltype(&VerFindFileA);
 	static Func VerFindFileA = (Func)GetProcAddress
-		(version_dll, "VerFindFileA");
+		(hDll, "VerFindFileA");
 	return VerFindFileA(uFlags,
 		szFileName,
 		szWinDir,
@@ -147,7 +139,7 @@ DWORD APIENTRY VerFindFileW_bridge(DWORD uFlags, LPCWSTR szFileName,
 {
 	using Func = decltype(&VerFindFileW);
 	static Func VerFindFileW = (Func)GetProcAddress
-		(version_dll, "VerFindFileW");
+		(hDll, "VerFindFileW");
 	return VerFindFileW(uFlags,
 		szFileName,
 		szWinDir,
@@ -165,7 +157,7 @@ DWORD APIENTRY VerInstallFileA_bridge(DWORD uFlags, LPCSTR szSrcFileName,
 {
 	using Func = decltype(&VerInstallFileA);
 	static Func VerInstallFileA = (Func)GetProcAddress
-		(version_dll, "VerInstallFileA");
+		(hDll, "VerInstallFileA");
 	return VerInstallFileA(uFlags,
 		szSrcFileName,
 		szDestFileName,
@@ -183,7 +175,7 @@ DWORD APIENTRY VerInstallFileW_bridge(DWORD uFlags, LPCWSTR szSrcFileName,
 {
 	using Func = decltype(&VerInstallFileW);
 	static Func VerInstallFileW = (Func)GetProcAddress
-		(version_dll, "VerInstallFileW");
+		(hDll, "VerInstallFileW");
 	return VerInstallFileW(uFlags,
 		szSrcFileName,
 		szDestFileName,
@@ -199,7 +191,7 @@ DWORD APIENTRY VerLanguageNameA_bridge(DWORD wLang, LPSTR szLang, DWORD nSize)
 {
 	using Func = decltype(&VerLanguageNameA);
 	static Func VerLanguageNameA = (Func)GetProcAddress
-		(version_dll, "VerLanguageNameA");
+		(hDll, "VerLanguageNameA");
 	return VerLanguageNameA(wLang, szLang, nSize);
 }
 
@@ -208,7 +200,7 @@ DWORD APIENTRY VerLanguageNameW_bridge(DWORD wLang, LPWSTR szLang, DWORD nSize)
 {
 	using Func = decltype(&VerLanguageNameW);
 	static Func VerLanguageNameW = (Func)GetProcAddress
-		(version_dll, "VerLanguageNameW");
+		(hDll, "VerLanguageNameW");
 	return VerLanguageNameW(wLang, szLang, nSize);
 }
 
@@ -218,7 +210,7 @@ BOOL APIENTRY VerQueryValueA_bridge(const LPVOID pBlock, LPCSTR lpSubBlock,
 {
 	using Func = decltype(&VerQueryValueA);
 	static Func VerQueryValueA = (Func)GetProcAddress
-		(version_dll, "VerQueryValueA");
+		(hDll, "VerQueryValueA");
 	return VerQueryValueA(pBlock, lpSubBlock, lplpBuffer, puLen);
 }
 
@@ -228,7 +220,7 @@ BOOL APIENTRY VerQueryValueW_bridge(const LPVOID pBlock, LPCWSTR lpSubBlock,
 {
 	using Func = decltype(&VerQueryValueW);
 	static Func VerQueryValueW = (Func)GetProcAddress
-		(version_dll, "VerQueryValueW");
+		(hDll, "VerQueryValueW");
 	return VerQueryValueW(pBlock, lpSubBlock, lplpBuffer, puLen);
 }
 
@@ -236,7 +228,7 @@ _int64 GetFileVersionInfoByHandle_bridge()
 {
 	using Func = decltype(&GetFileVersionInfoByHandle_bridge);
 	static Func GetFileVersionInfoByHandle = (Func)GetProcAddress
-		(version_dll, "GetFileVersionInfoByHandle");
+		(hDll, "GetFileVersionInfoByHandle");
 	return GetFileVersionInfoByHandle();
 }
 

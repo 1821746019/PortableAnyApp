@@ -1,144 +1,141 @@
-﻿import MacroMgr;
-import ConfigMgr;
-import fs_common;
-import my_converter.str;
-#include <string>
-#include <iostream>
-#include <unordered_map>
-#include <ntdll.h>
-#include <filesystem>
-#include <queue>
-using namespace std;
-
-// 定义一个unordered_map来存储NTSTATUS代码和对应的字符串描述
-std::unordered_map<NTSTATUS, std::string> ntStatusMap{
-	{STATUS_SUCCESS, "Operation successfully completed."},
-	{STATUS_WAIT_0, "Wait operation completed."},
-	{STATUS_ABANDONED_WAIT_0, "Abandoned wait operation completed."},
-	{STATUS_USER_APC, "User-mode asynchronous procedure call (APC) completed."},
-	{STATUS_TIMEOUT, "The operation timed out."},
-	{STATUS_PENDING, "The operation is still pending."},
-	{STATUS_PARTIAL_COPY, "Only part of a ReadProcessMemory or WriteProcessMemory request was completed."},
-	{STATUS_INVALID_HANDLE, "An invalid handle was specified."},
-	{STATUS_NOT_FOUND, "The specified object was not found."},
-	{STATUS_NOT_SUPPORTED, "The request is not supported."},
-	{STATUS_ACCESS_DENIED, "Access is denied."},
-	{STATUS_INVALID_PARAMETER, "One or more parameters are invalid."},
-	{STATUS_NO_MEMORY, "Not enough virtual memory or paging file quota is available to complete the specified operation."},
-	{STATUS_CONFLICTING_ADDRESSES, "Address range to unmap overlaps with an address range already unmapped."},
-	{STATUS_ACCESS_VIOLATION, "The thread tried to access an inaccessible address."},
-	{STATUS_IN_PAGE_ERROR, "The pagefile is corrupted or insufficient memory to carry out the requested operation."},
-	{STATUS_PAGEFILE_QUOTA, "The process has exceeded its pagefile quota."},
-	{STATUS_INVALID_PAGE_PROTECTION, "The page protection cannot be applied to the virtual memory region."},
-	{STATUS_ILLEGAL_INSTRUCTION, "An illegal instruction was attempted."},
-	{STATUS_ALLOTTED_SPACE_EXCEEDED, "The allocated space is exceeded."},
-	{STATUS_INSUFFICIENT_RESOURCES, "Insufficient resources to complete the API."},
-	{STATUS_DISK_FULL, "The disk is full."},
-	{STATUS_FILE_LOCK_CONFLICT, "A file lock conflict occurred."},
-	{STATUS_NOT_IMPLEMENTED, "The function or variable is not implemented."},
-	// 更多状态代码...
-};
-
-#include <vector>
-#include <algorithm>
-using namespace std;
-
-template<typename T, typename Comparator = std::less<T>>
-class Heap {
-	std::vector<T> data_;
-	Comparator comp_;
-
-	void adjustDown(int idx) {
-		int n = data_.size();
-		
-		int child = 2 * idx + 1; // 左子节点的索引
-		while (child < n) {
-			// 检查是否有右子节点并且是否需要与之交换
-			if (child + 1 < n && comp_(data_[child], data_[child + 1])) {
-				child++;
-			}
-			// 如果父节点符合比较器的条件，则退出
-			if (comp_(data_[child], data_[idx])) {
-				break;
-			}
-			std::swap(data_[idx], data_[child]);
-			idx = child;
-			child = 2 * idx + 1;
-		}
-	}
-
-public:
-	explicit Heap(const std::vector<T>& init = {}) : data_(init) {
-		for (int i = (data_.size() / 2) - 1; i >= 0; --i) {
-			adjustDown(i);
-		}
-	}
-
-	void insert(const T& value) {
-		data_.push_back(value);
-		int i = data_.size() - 1;
-		int parent = (i - 1) / 2;
-		while (i > 0 && comp_(data_[parent], data_[i])) {
-			std::swap(data_[i], data_[parent]);
-			i = parent;
-			parent = (i - 1) / 2;
-		}
-	}
-
-	T pop() {
-		T top = data_[0];
-		data_[0] = data_.back();
-		data_.pop_back();
-		adjustDown(0);
-		return top;
-	}
-
-	bool empty() const {
-		return data_.empty();
-	}
-};
-
-void test()
-{
-	// 最大堆
-	Heap<int, std::less<int>> maxHeap;
-	maxHeap.insert(5);
-	maxHeap.insert(3);
-	maxHeap.insert(8);
-	maxHeap.insert(1);
-	std::cout << "Max Heap: ";
-	while (!maxHeap.empty()) {
-		std::cout << maxHeap.pop() << " ";
-	}
-	std::cout << "\n";
-	std::priority_queue<int, vector<int>, less<int>> heap;
-	heap.emplace(5); heap.emplace(3); heap.emplace(8); heap.emplace(1);
-	cout << "Heap: " << '\n';
-	while (!heap.empty())
-	{
-		cout << heap.top() << ' ';
-		heap.pop();
-
-	}
-	cout << '\n';
-	
+﻿extern "C" {
 }
+#include <cstdio>
+#include <Windows.h>
+import std;
+#include <boost/spirit/include/qi.hpp>
+#include <boost/spirit/include/qi_string.hpp>
+#include <boost/spirit/include/phoenix.hpp>
+#include <boost/fusion/include/adapt_struct.hpp>
+
+
+using namespace std;
+
+//static class MyGlobalInit
+//{
+//  lpp::LppDefaultAgent lppAgent;
+//
+//public:
+//  MyGlobalInit()
+//  {
+//    // create a default agent, loading the Live++ agent from the given path, e.g. "ThirdParty/LivePP"
+//    lppAgent = lpp::LppCreateDefaultAgent(nullptr, LR"(D:\environment\c++\LivePP)");
+//
+//    // bail out in case the agent is not valid
+//    if (!lpp::LppIsValidDefaultAgent(&lppAgent))
+//    {
+//      throw runtime_error("Failed to create default agent");
+//    }
+//
+//    // enable Live++ for all loaded modules
+//    lppAgent.EnableModule(lpp::LppGetCurrentModulePath(),
+//                          lpp::LPP_MODULES_OPTION_ALL_IMPORT_MODULES, nullptr, nullptr);
+//  }
+//
+//  ~MyGlobalInit()
+//  {
+//    // destroy the Live++ agent
+//    lpp::LppDestroyDefaultAgent(&lppAgent);
+//  }
+//} my_global_init;
+
+void hotReloadTest()
+{
+	 int cnt = 1;
+  for (int i = 0; i < 5; ++i)
+  {
+    println("{}", ++cnt);
+
+  }
+}
+
+//int main()
+//{
+//  sizeof(void*);
+//  (void)setvbuf(stdout,nullptr,_IONBF,0);
+//  //LoadLibraryA("./kernel32.dll");
+//  while (true)
+//  {
+//    hotReloadTest();
+//    this_thread::sleep_for(chrono::milliseconds(500));
+//  }
+//  // hotReloadTest();
+//}
+// 定义数据结构
+struct RegValue {
+  std::string name;
+  std::string value;
+};
+
+struct RegEntry {
+  std::string key;
+  std::vector<RegValue> values;
+};
+
+// 适配结构体
+BOOST_FUSION_ADAPT_STRUCT(
+  RegValue,
+  (std::string, name)
+  (std::string, value)
+)
+
+BOOST_FUSION_ADAPT_STRUCT(
+  RegEntry,
+  (std::string, key)
+  (std::vector<RegValue>, values)
+)
+
 int main() {
-	test();
-	getchar();
-	MacroMgr macro_mgr;
-	macro_mgr.add(pair{ L"USER_HOME",getUserHomePath() });
-	wstring app_home_dir;
-	try
-	{
-		app_home_dir = getAppHomePathW();
-	}
-	catch (...)
-	{
-		app_home_dir = filesystem::current_path();//brv::strConvert(getAppHomePathW(AppHomeGetSchema::exeDir));
-	}
-	ConfigMgr config_mgr(&macro_mgr, L"D:\\fs_guard.toml");
+  using namespace boost::spirit::qi;
+  using boost::spirit::ascii::space;
 
+  std::string input = R"(
+Windows Registry Editor Version 5.00
 
-	getchar();
+[HKEY_CURRENT_USER\Software\Example]
+"StringValue"="Example String"
+"DWORDValue"=dword:00000001
+)";
+
+  RegEntry entry;
+  auto it = input.begin();
+  auto end = input.end();
+
+  bool success = phrase_parse(
+    it,
+    end,
+    // Grammar
+    (
+      // 版本声明
+      lit("Windows Registry Editor Version") >> "5.00" >> eol
+      >>
+      // 键路径
+      '[' >> +(char_ - ']') >> ']' >> eol
+      >>
+      // 键值对
+      *(
+        '"' >> +(char_ - '"') >> '"' >> '='
+        >> (
+          '"' >> *(char_ - '"') >> '"' |
+          "dword:" >> +xdigit
+          ) >> eol
+        )
+      ),
+    // 解析时跳过空白
+    space,
+    entry
+  );
+
+  if (success && it == end) {
+    std::cout << "解析成功！\n";
+    std::cout << "键路径: " << entry.key << "\n";
+    for (const auto& kv : entry.values) {
+      std::cout << "键名: " << kv.name << "，值: " << kv.value << "\n";
+    }
+  }
+  else {
+    std::cout << "解析失败！\n";
+  }
+
+  return 0;
 }

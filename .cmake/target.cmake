@@ -33,3 +33,14 @@ function(bs_get_project_targetList)#need to use with bs_add_exe、bs_add_lib
 
 
 endfunction()
+
+
+# require predefineVar.cmake included previous to init BS_ARCH var
+function(appendArch target_name)
+
+	add_custom_command(TARGET ${target_name} POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E rename
+	${CMAKE_CURRENT_BINARY_DIR}/${target_name}.dll
+	${CMAKE_CURRENT_BINARY_DIR}/${target_name}.${BS_ARCH}.dll
+	)
+endfunction()

@@ -6,8 +6,10 @@ set_target_properties(${lib_name}  PROPERTIES OUTPUT_NAME "version")
 
 
 
-target_link_libraries(${lib_name} PRIVATE versionForged fs_core common)
+target_link_libraries(${lib_name} PRIVATE versionForged fs_core common
+)
 
+#target_compile_definitions(${lib_name} PRIVATE )
 add_custom_command(TARGET ${lib_name} POST_BUILD COMMAND
 ${CMAKE_COMMAND} -E copy 
 $<TARGET_FILE:${lib_name}> 
@@ -18,5 +20,5 @@ $<TARGET_FILE:${lib_name}>
 
 )
 
-add_compile_options(-fsanitize=address)
-add_link_options(-fsanitize=address)
+#add_compile_options(-fsanitize=address)
+#add_link_options(-fsanitize=address)

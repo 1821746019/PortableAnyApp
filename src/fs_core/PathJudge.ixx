@@ -1,24 +1,55 @@
-﻿import FsConfig;
-import my_converter.str;
-
-#include "PathJudge.h"
-
-#include <algorithm>
-#include <format>
-#include <ranges>
+﻿module;
 #include <Windows.h>
 
+export module PathJudge;
+import std;
 
+import FsConfig;
+
+export {
+	constexpr auto NT_PREFIX_W = L"\\??\\";
+	constexpr auto NT_PREFIX_LEN= 4;
+	constexpr auto  NT_PREFIX = "\\??\\";
+	struct JudgeContext
+	{
+		enum JudgeContextFlag { InPathList, InOld2new };
+		JudgeContextFlag flag;
+		const std::wstring* matched = nullptr;
+		int offset = 0;
+
+	};
+
+
+	class PathJudge {
+		inline static PathJudge* ins_ = nullptr;
+		bool blacklist_mode = true;
+		std::vector<std::wstring> path_list_;
+		std::vector<std::wstring> excluded_path_list_;
+		std::unordered_map<std::wstring, std::wstring> old2new_;
+		std::wstring default_redirected_path_prefix_;
+		//void _init_();
+
+		PathJudge();
+
+	public:
+		static void _init_(const FsConfig& fs_config);
+		static PathJudge* _ins_();
+		static PathJudge* _reinit_();
+		bool judge(const wchar_t* old, JudgeContext* judge_context = nullptr, bool is_nt_path = true)const;
+		bool redirect(const wchar_t* old, const JudgeContext* judge_context, wchar_t* buffer, int len, bool is_nt_path = true) const;
+		bool judgeAndRedirect(const wchar_t* old, wchar_t* buffer, int len) const;
+	};
+
+
+}
+
+
+
+
+import my_converter.str;
 
 using namespace std;
-struct JudgeContext
-{
-	enum JudgeContextFlag { InPathList, InOld2new };
-	JudgeContextFlag flag;
-	const wstring* matched = nullptr;
-	int offset = 0;
 
-};
 
 void PathJudge::_init_(const FsConfig& fs_config)
 {
@@ -33,7 +64,7 @@ void PathJudge::_init_(const FsConfig& fs_config)
 	ins_->excluded_path_list_ = vector<wstring>(v.begin(), v.end());
 	//path_list
 	v = fs_config.path_list | views::transform(addNtPrefix);
-	ins_->path_list_ =vector(v.begin(),v.end());
+	ins_->path_list_ = vector(v.begin(), v.end());
 	//default prefix
 	ins_->default_redirected_path_prefix_ = addNtPrefix(fs_config.default_redirected_path_prefix);
 	// old2new_
@@ -41,7 +72,7 @@ void PathJudge::_init_(const FsConfig& fs_config)
 		{
 			return pair{ addNtPrefix(p.first),addNtPrefix(p.second) };
 		});
-	ins_->old2new_ = unordered_map<wstring,wstring>(v2.begin(),v2.end());
+	ins_->old2new_ = unordered_map<wstring, wstring>(v2.begin(), v2.end());
 
 }
 //void PathJudge::_init_()
@@ -96,7 +127,7 @@ PathJudge* PathJudge::_reinit_()
 
 bool PathJudge::judge(const wchar_t* old, JudgeContext* judge_context, bool is_nt_path) const
 {
-	if(wcscmp(old,LR"(\??\C:\Users\Administrator\AppData\LocalLow)")==0)
+	if (wcscmp(old, LR"(\??\C:\Users\Administrator\AppData\LocalLow)") == 0)
 	{
 		int hit = 1;
 	}
@@ -180,14 +211,14 @@ bool PathJudge::redirect(const wchar_t* old, const JudgeContext* judge_context, 
 
 
 	if (judge_context->flag == JudgeContext::InOld2new) {
-		int offset = is_nt_path ? 0 : NT_PREFIX_LEN ;
+		int offset = is_nt_path ? 0 : NT_PREFIX_LEN;
 		const wstring& old_prefix = *judge_context->matched,
 			new_prefix = old2new_.at(old_prefix);
-		wstring result = wstring(old).replace(0, old_prefix.size()-offset, new_prefix.data()+offset
+		wstring result = wstring(old).replace(0, old_prefix.size() - offset, new_prefix.data() + offset
 		);
 		//uin_
 		//memcpy_s(buffer,len,result.data())
-		wcscpy_s(buffer, len, result.data() );
+		wcscpy_s(buffer, len, result.data());
 		ret = true;
 	}
 	//redirect for path_list

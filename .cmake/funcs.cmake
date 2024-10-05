@@ -165,7 +165,7 @@ function(bs_add_lib name)
     set(lib_type STATIC)
     set(patterns)
 
-    set(known_lib_types STATIC SHARED MODULE INTERFACE)
+    set(known_lib_types STATIC SHARED MODULE INTERFACE OBJECT)
 
     foreach(arg IN LISTS ARGN)
         if(arg IN_LIST known_lib_types)

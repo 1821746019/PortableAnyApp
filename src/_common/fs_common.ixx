@@ -1,11 +1,10 @@
 ﻿module;
 
-#include <filesystem>
+
 #include <Windows.h>
-#include <stdexcept>
-#include <string>
 
 export module fs_common;
+import std;
 
 export {
 	std::string getExeDir()

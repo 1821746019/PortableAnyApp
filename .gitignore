@@ -3,5 +3,7 @@
 build/
 _insights/
 
-.vs/*
-
+.vs/
+.idea/
+*.user
+_depre/

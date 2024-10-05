@@ -1,9 +1,9 @@
 ﻿module;
-#include <string>
-#include <unordered_map>
-#include <vector>
+
 export module FsConfig;
 
+
+import std;
 export{
 
 	struct FsConfig

@@ -1,10 +1,9 @@
 ﻿module;
-#include "PathJudge.h"
 #include <ntdll.h>
 #include <stdexcept>
 export module func2hook.kernelbase;
 import fs_common;
-
+import PathJudge;
 
 
 using func_t = BOOL(WINAPI *)(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData, DWORD dwFlags, HANDLE hTransaction);
