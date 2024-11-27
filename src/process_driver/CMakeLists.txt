@@ -38,7 +38,7 @@ set(WDK_LINK_DIR "${WDK_PATH}/Lib/${SDK_VERSION}/km/$ENV{VSCMD_ARG_TGT_ARCH}")
 message(WARNING "WDK_LINK_DIR is ${WDK_LINK_DIR}")
 link_directories(${WDK_LINK_DIR})
 
-target_link_libraries(${PROJECT_NAME} 
+target_link_libraries(${PROJECT_NAME} PRIVATE
 "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22621.0/km/x64/ntoskrnl.lib"
 "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.22621.0/km/x64/fltMgr.lib"
 )

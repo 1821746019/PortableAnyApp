@@ -10,13 +10,10 @@ endfunction()
 
 BS_ADD_ALL_SUBDIR_IF_EXIST()
 
-set(exe_name uniLauncher)
-bs_add_exe( ${exe_name}
+set(exe_name  uniLauncher)
+bs_add_exe( ${exe_name} WIN32
 	*.cpp *.ixx)
 add_dependencies(${exe_name} extBoot)
 
 
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(tomlplusplus REQUIRED IMPORTED_TARGET tomlplusplus)
-target_link_libraries(${exe_name} PkgConfig::tomlplusplus)

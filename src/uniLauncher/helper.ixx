@@ -6,6 +6,10 @@ export module helper;
 
 import std;
 export {
+  //std::wstring GetCurrentExeName()
+  //{
+  //  //wchar_t buf[]
+  //}
   // 枚举类定义
   enum class PECheckStatus {
     Failed,

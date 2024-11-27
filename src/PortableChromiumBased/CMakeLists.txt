@@ -3,7 +3,7 @@ set(exe_name "test")
 set(out_name "version")
 file(GLOB src_list "*.cpp" "*.ixx" )
 
-add_library(${dll_name} SHARED ${src_list} "versionFunc.def")
+bs_add_lib(${dll_name} SHARED ${src_list} )
 set_target_properties(${dll_name} PROPERTIES OUTPUT_NAME ${out_name})
 
 target_link_libraries(${dll_name} PRIVATE versionForged Hooker MyLib)

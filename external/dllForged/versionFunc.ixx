@@ -1,7 +1,6 @@
 ﻿module;
 
 #include <Windows.h>
-#include <winver.h>
 export module versionFunc;
 
 import std;

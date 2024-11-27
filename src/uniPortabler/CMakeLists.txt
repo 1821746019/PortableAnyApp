@@ -1,7 +1,7 @@
 ﻿set(lib_name uniPortabler)
-bs_add_lib(${lib_name} SHARED "*.ixx"  "*.cpp" "*.def"  )
+bs_add_lib(${lib_name} SHARED "*.ixx" "*.cpp" "*.def")
 #
-set_target_properties(${lib_name}  PROPERTIES OUTPUT_NAME "version")
+set_target_properties(${lib_name} PROPERTIES OUTPUT_NAME "version")
 #bs_get_files_paths(src_list )
 
 
@@ -11,12 +11,14 @@ target_link_libraries(${lib_name} PRIVATE versionForged fs_core common
 
 #target_compile_definitions(${lib_name} PRIVATE )
 add_custom_command(TARGET ${lib_name} POST_BUILD COMMAND
-${CMAKE_COMMAND} -E copy 
-$<TARGET_FILE:${lib_name}> 
-"D:\\Program Files\\安卓模拟\\LDPlayer_v9.0.71\\App"
-"D:\\Users\\Administrator\\Desktop\\repository\\离线网页\\##miscellaneous\\#windows相关\\打开资源管理器让用户选择文件\\App32"
-"D:\\Program Files\\JianyingPro\\5\\5.0.0.10938\\App"
-#"D:\\Users\\Administrator\\Desktop\\repository\\离线网页\\##miscellaneous\\#windows相关\\打开资源管理器让用户选择文件\\App"
+    ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${lib_name}>
+    #"D:/Program Files/WPS Office绿色版 12.1.0.16364/v12.1/App"
+    #"D:\\Program Files\\安卓模拟\\LDPlayer_v9.0.71\\App"
+    #"D:\\Users\\Administrator\\Desktop\\repository\\离线网页\\##miscellaneous\\#windows相关\\打开资源管理器让用户选择文件\\App"
+    # "D:/Program Files (x86)/VMapp/Genymotion/v3.6/App"
+    "D:/environment/IDE/JetBrains/WebStorm/v24.3/App/bin/"
+    #"D:\\Program Files\\JianyingPro\\5\\5.0.0.10938\\App"
+    #"D:\\Users\\Administrator\\Desktop\\repository\\离线网页\\##miscellaneous\\#windows相关\\打开资源管理器让用户选择文件\\App"
 
 )
 

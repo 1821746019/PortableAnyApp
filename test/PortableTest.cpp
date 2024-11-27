@@ -2,7 +2,7 @@ extern "C"{
 }
 #include <LPP_API_x64_CPP.h>
 import std;
-import MacroMgr;
+import VarInterpolationMgr;
 import ConfigMgr;
 import fs_common;
 import my_converter.str;

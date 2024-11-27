@@ -12,16 +12,30 @@ function(bs_add_all_subdir )
 endfunction()
 
 function(bs_add_all_subdir_if_exist)
+    # 检查是否传入了 excluded_list
+    if(ARGC GREATER 0)
+        set(excluded_list ${ARGV0})
+    else()
+        set(excluded_list "")
+    endif()
+
     # 扫描当前路径下的所有项
     file(GLOB children RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
+
     foreach(child ${children})
-        # 对于每一个项，检查是否为目录且该目录下存在CMakeLists.txt
-        if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${child} AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${child}/CMakeLists.txt")
-            # 添加子目录到构建中
-            add_subdirectory(${child})
+        # 检查是否为目录且该目录下存在 CMakeLists.txt
+        if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${child}" AND
+           EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${child}/CMakeLists.txt")
+           
+            # 如果 excluded_list 不为空，检查当前子目录是否在排除列表中
+            if(NOT ("${child}" IN_LIST excluded_list))
+                # 添加子目录到构建中
+                add_subdirectory("${child}")
+            endif()
         endif()
     endforeach()
 endfunction()
+
 
 
 function(bs_get_files_paths _file_list)

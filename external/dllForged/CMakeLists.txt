@@ -1,5 +1,7 @@
-﻿set(dlls version;)
+﻿set(dlls version;winmm)
 
+
+set(lib_link_excluded_list "")
 foreach(dll ${dlls})
 
 	bs_add_lib("${dll}Forged" STATIC    "${dll}Func.ixx" )
@@ -10,7 +12,10 @@ foreach(dll ${dlls})
 		target_compile_options("${dll}Forged" PRIVATE /Os)
 
 	endif()
-	target_link_libraries(${dll}Forged std)
+	if(${dll} IN_LIST lib_link_excluded_list)
+		continue()
+	endif()
+	target_link_libraries(${dll}Forged PRIVATE  std ${dll}.lib)
 endforeach()
 
 #bs_add_lib("kernel32new" "kernel32new.def" "kernel32new.ixx")

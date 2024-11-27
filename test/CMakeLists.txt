@@ -11,8 +11,20 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/../external)
 
 set(exe_name testApp)
 add_executable(${exe_name} testApp.cpp)
-find_package(boost_spirit REQUIRED CONFIG)
-target_link_libraries(${exe_name} PRIVATE Boost::spirit)
-target_include_directories(${exe_name} PRIVATE ${Live++_INCLUDE_DIRS})
-#add_custom_command(${exe_name} POST_BUILD)
+#target_link_libraries(${exe_name} PRIVATE Boost::spirit)
+#target_include_directories(${exe_name} PRIVATE ${Live++_INCLUDE_DIRS})
 
+
+find_package(boost_spirit REQUIRED CONFIG)
+link_libraries( Boost::spirit)
+set(exe_name boost.spirit.test)
+
+bs_add_exe(${exe_name} boost.spirit.cpp)
+
+
+
+add_dependencies(testApp extBoot loadDllInChildren allocConsole )
+
+
+set(exe_name tmp)
+bs_add_exe(${exe_name} tmp.ixx)
