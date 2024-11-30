@@ -2,7 +2,7 @@
 set(lib_name ext_common)
 bs_add_lib(${lib_name} OBJECT *.ixx)
 
-add_library(pch STATIC  pch.cpp)
+add_library(pch STATIC pch.cpp)
 target_precompile_headers(pch PRIVATE pch.cpp)
 link_libraries(${lib_name} Hooker pch)
 
@@ -36,10 +36,16 @@ foreach(e ${all_targets})
     endif()
     target_precompile_headers(${e} REUSE_FROM pch)
     add_dependencies(build_ext ${e})
+    #
     add_custom_command(TARGET ${e} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${e}>
+        # generate toml file for each ext if not exist
+        COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_SOURCE_DIR}/${e}/${e}.toml
+        # copy dll to install folder
+
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:${e}>
         ${PROJECT_SOURCE_DIR}/install/${BS_ARCH}/Ext/${e}$<$<STREQUAL:${BS_ARCH},x86>:.${BS_ARCH}>.dll
-        COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_SOURCE_DIR}/install/${BS_ARCH}/Ext/${e}.toml
+
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/${e}/${e}.toml ${PROJECT_SOURCE_DIR}/install/${BS_ARCH}/Ext/${e}.toml
     )
 endforeach()
 

@@ -4,11 +4,12 @@ module;
 #pragma comment(lib, "winmm.lib")
 export module _;
 import std;
+//import std.compat;
 using namespace std;
 decltype(&CreateFileA) CreateFileA_raw = &CreateFileA;
 decltype(&CreateFileA) CreateFileA_raw2 = CreateFileA;
 extern "C"  int main() {
-
+  //uint32_t a = 0;
   cout << std::filesystem::current_path() << endl;
 
   //std::cout << filesystem:;

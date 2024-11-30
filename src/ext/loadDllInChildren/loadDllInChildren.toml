@@ -1,0 +1,10 @@
+# default is loading extBoot to all children process
+# 黑名单里的进程不会load
+# 白名单里的进程会load
+# 支持正则表达式，语法类似JS /pattern/
+
+isBlacklistMode=false # 默认loadToAllChilren，黑名单是排除的
+
+included_list=['''Fiddler Everywhere.exe''']
+
+excluded_list=[] # 不理解就不要用

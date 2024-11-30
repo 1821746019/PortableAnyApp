@@ -1,13 +1,12 @@
 ﻿module;
-
-#include <string>
 #include "ntdll.h"
-
+#include <stdint.h>
 // #include <NTLib.h>
 export module func2hook;
 
 import PathJudge;
 
+import std;
 // 确保ObjectAttributes->ObjectName->Buffer的内存在此作用域内有效
 // UNICODE_STRING效果同上
 #define procRedirect()                   \
@@ -123,6 +122,8 @@ export {
     redirectIt;
     return NtDeleteFile_raw(ObjectAttributes);
   };
+  //decltype(&NtDeviceIoControlFile)
+
   decltype(&NtQueryAttributesFile) NtQueryAttributesFile_raw =
       &NtQueryAttributesFile;
 
@@ -140,78 +141,101 @@ export {
     redirectIt;
     return NtQueryFullAttributesFile_raw(ObjectAttributes, FileInformation);
   }
-
-  decltype(&NtSetInformationFile) NtSetInformationFile_raw =
-      &NtSetInformationFile;
-  struct FILE_LINK_INFORMATION {
-    BOOLEAN ReplaceIfExists;
-    HANDLE RootDirectory;
-    ULONG FileNameLength;
-    WCHAR FileName[1];
-  };
-  NTSTATUS NTAPI NtSetInformationFile_mod(HANDLE FileHandle,
-      PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, ULONG Length,
-      FILE_INFORMATION_CLASS FileInformationClass) {
-    FILE_RENAME_INFO* FRI_new = nullptr;
-    FILE_LINK_INFORMATION* FLI_new = nullptr;
-    wchar_t path_old[MAX_PATH + 1];
-    wchar_t path_new[MAX_PATH + 1];
-
-    // rename file
-    if (FileInformationClass == FileRenameInformation) {
-      FILE_RENAME_INFO* FRI = (FILE_RENAME_INFO*)FileInformation;
-      memcpy(path_old, FRI->FileName, FRI->FileNameLength);
-      uint8_t* p = (uint8_t*)path_old;
-      p[FRI->FileNameLength] = 0;
-      p[FRI->FileNameLength + 1] = 0;
-      if (PathJudge::_ins_()->judgeAndRedirect(
-              path_old, path_new, (int)std::size(path_new))) {
-        auto path_len = wcslen(path_new);
-        uint32_t path_byte_num = uint32_t(path_len + 1) * sizeof(wchar_t);
-
-        FRI_new = (FILE_RENAME_INFO*)new uint8_t[sizeof(FILE_RENAME_INFO) +
-                                                 path_byte_num];
-        *FRI_new = *FRI;
-        FRI_new->FileNameLength = path_byte_num;
-        memcpy(FRI_new->FileName, path_new, path_byte_num);
-        FRI_new->FileName[path_len] = 0;  // add a '\0' at the end
-      }
-    } else if (FileInformationClass == FileLinkInformation) {
-      FILE_LINK_INFORMATION* FLI = (FILE_LINK_INFORMATION*)FileInformation;
-      memcpy(path_old, FLI->FileName, FLI->FileNameLength);
-      uint8_t* p = (uint8_t*)path_old;
-      p[FLI->FileNameLength] = 0;
-      p[FLI->FileNameLength + 1] = 0;
-      if (PathJudge::_ins_()->judgeAndRedirect(
-              path_old, path_new, (int)std::size(path_new))) {
-        auto path_len = wcslen(path_new);
-        uint32_t path_byte_num = uint32_t(path_len + 1) * sizeof(wchar_t);
-
-        FLI_new = (FILE_LINK_INFORMATION*)new uint8_t[sizeof(FILE_RENAME_INFO) +
-                                                      path_byte_num];
-        *FLI_new = *FLI;
-        FLI_new->FileNameLength = path_byte_num;
-        memcpy(FLI_new->FileName, path_new, path_byte_num);
-        FLI_new->FileName[path_len] = 0;
-      }
+  decltype(&NtDeviceIoControlFile) NtDeviceIoControlFile_raw =
+      &NtDeviceIoControlFile;
+  auto NTAPI NtDeviceIoControlFile_mod(
+      HANDLE FileHandle, HANDLE Event, PIO_APC_ROUTINE ApcRoutine,
+      PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, ULONG IoControlCode,
+      PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer,
+      ULONG OutputBufferLength) {
+    //redirectIt;
+    //get the path from FileHandle
+    wchar_t buffer[MAX_PATH + 1];
+    DWORD result=GetFinalPathNameByHandleW(FileHandle, buffer, std::size(buffer), VOLUME_NAME_DOS);
+    if (result == 0) {
+      std::cerr << "Failed to get file path, error code: " << GetLastError()
+                << std::endl;
+    } else {
+      std::cout << "File Path: ";
+      //<< buffer << std::endl;
     }
-
-    if (FRI_new)  // not nullptr indicates it was redirected
-    {
-      FileInformation = FRI_new;
-    }
-    if (FLI_new)
-      FileInformation = FLI_new;
-    auto ret = NtSetInformationFile_raw(FileHandle, IoStatusBlock,
-        FileInformation, Length, FileInformationClass);
-    delete FRI_new;
-    delete FLI_new;
-
-    return ret;
+    //PathJudge* path_judge = PathJudge::_ins_();
+    //if (path_judge->judgeAndRedirect(buffer, buffer, (int)std::size(buffer))) {
+    //  // IoStatusBlock->Information = 0;
+    //  //return STATUS_SUCCESS;
+    //  int _ = 0;
+    //}
+    return NtDeviceIoControlFile_raw(
+        FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, IoControlCode,
+        InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength);
   }
-}
+  //decltype(&NtSetInformationFile) NtSetInformationFile_raw =
+  //    &NtSetInformationFile;
+  //struct FILE_LINK_INFORMATION {
+  //  BOOLEAN ReplaceIfExists;
+  //  HANDLE RootDirectory;
+  //  ULONG FileNameLength;
+  //  WCHAR FileName[1];
+  //};
+  //NTSTATUS NTAPI NtSetInformationFile_mod(HANDLE FileHandle,
+  //    PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, ULONG Length,
+  //    FILE_INFORMATION_CLASS FileInformationClass) {
+  //  FILE_RENAME_INFO* FRI_new = nullptr;
+  //  FILE_LINK_INFORMATION* FLI_new = nullptr;
+  //  wchar_t path_old[MAX_PATH + 1];
+  //  wchar_t path_new[MAX_PATH + 1];
 
-// 忽略此处
-export {
-  __declspec(dllexport) void tmp() {}
+  //  // rename file
+  //  if (FileInformationClass == FileRenameInformation) {
+  //    FILE_RENAME_INFO* FRI = (FILE_RENAME_INFO*)FileInformation;
+  //    memcpy(path_old, FRI->FileName, FRI->FileNameLength);
+  //    uint8_t* p = (uint8_t*)path_old;
+  //    p[FRI->FileNameLength] = 0;
+  //    p[FRI->FileNameLength + 1] = 0;
+  //    if (PathJudge::_ins_()->judgeAndRedirect(
+  //            path_old, path_new, (int)std::size(path_new))) {
+  //      auto path_len = wcslen(path_new);
+  //      uint32_t path_byte_num = uint32_t(path_len + 1) * sizeof(wchar_t);
+
+  //      FRI_new = (FILE_RENAME_INFO*)new uint8_t[sizeof(FILE_RENAME_INFO) +
+  //                                               path_byte_num];
+  //      *FRI_new = *FRI;
+  //      FRI_new->FileNameLength = path_byte_num;
+  //      memcpy(FRI_new->FileName, path_new, path_byte_num);
+  //      FRI_new->FileName[path_len] = 0;  // add a '\0' at the end
+  //    }
+  //  } else if (FileInformationClass == FileLinkInformation) {
+  //    FILE_LINK_INFORMATION* FLI = (FILE_LINK_INFORMATION*)FileInformation;
+  //    memcpy(path_old, FLI->FileName, FLI->FileNameLength);
+  //    uint8_t* p = (uint8_t*)path_old;
+  //    p[FLI->FileNameLength] = 0;
+  //    p[FLI->FileNameLength + 1] = 0;
+  //    if (PathJudge::_ins_()->judgeAndRedirect(
+  //            path_old, path_new, (int)std::size(path_new))) {
+  //      auto path_len = wcslen(path_new);
+  //      uint32_t path_byte_num = uint32_t(path_len + 1) * sizeof(wchar_t);
+
+  //      FLI_new = (FILE_LINK_INFORMATION*)new uint8_t[sizeof(FILE_RENAME_INFO) +
+  //                                                    path_byte_num];
+  //      *FLI_new = *FLI;
+  //      FLI_new->FileNameLength = path_byte_num;
+  //      memcpy(FLI_new->FileName, path_new, path_byte_num);
+  //      FLI_new->FileName[path_len] = 0;
+  //    }
+  //  } 
+
+  //  if (FRI_new)  // not nullptr indicates it was redirected
+  //  {
+  //    FileInformation = FRI_new;
+  //  }
+  //  if (FLI_new)
+  //    FileInformation = FLI_new;
+  //  auto ret = NtSetInformationFile_raw(FileHandle, IoStatusBlock,
+  //      FileInformation, Length, FileInformationClass);
+  //  delete FRI_new;
+  //  delete FLI_new;
+
+  //  return ret;
+  //}
+  //
 }

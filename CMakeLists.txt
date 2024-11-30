@@ -44,7 +44,7 @@ link_libraries(std)
 
 add_subdirectory(src)
 add_subdirectory("test")
-
+add_subdirectory("practice")
 #add_subdirectory("cmake")
 
 

@@ -1,0 +1,24 @@
+[[beforeRunning]]
+# 在exe启动前执行的文件列表或目录列表
+# 如果是文件列表，填入文件路径；如果是目录列表，填入目录路径（不会递归遍历目录下的文件）
+isAsync=false
+shouldShowWindow=false
+fileList=[]
+dirList=[]
+
+[[beforeRunning]]
+# 在exe启动前执行的文件列表或目录列表
+# 如果是文件列表，填入文件路径；如果是目录列表，填入目录路径（不会递归遍历目录下的文件）
+isAsync=true
+fileList=[]
+dirList=[]
+
+[[onRunning]]
+fileList=[]
+dirList=[]
+
+
+[[afterRunning]]
+# 在exe运行结束后执行的文件列表或目录列表
+fileList=[]
+dirList=[]

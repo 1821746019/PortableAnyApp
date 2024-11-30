@@ -1,0 +1,9 @@
+# default is loading extBoot to all children process
+# 黑名单里的进程不会load
+# 白名单里的进程会load
+# 支持正则表达式，语法类似JS /pattern/
+isBlacklistMode=false
+excluded_list=["null"] # 不理解就不要用
+
+included_list=["/${TOP_PROCESS_NAME}(?!.*(gpu-process|render))/"]
+

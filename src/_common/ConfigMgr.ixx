@@ -1,8 +1,5 @@
 ﻿module;
 
-// #include <string>
-// #define TOML_ALL_INLINE 1
-#define TOML_HEADER_ONLY 0
 #include <toml++/toml.hpp>
 export module ConfigMgr;
 import VarInterpolationMgr;
@@ -29,37 +26,34 @@ export class ConfigMgr {
 
  public:
   FsConfig fsConfig() { return fs_config_; }
-  ConfigMgr(VarInterpolationMgr* varInterpolationMgr,
-            const std::wstring& config_path) {
-    macro_mgr_ = varInterpolationMgr;
+  ConfigMgr(VarInterpolationMgr* varIntepoMgr, const std::wstring& config_path) {
+    macro_mgr_ = varIntepoMgr;
     std::string afterPreproc = preprocConfig(config_path);
     auto config = toml::parse(afterPreproc);
     AppHomeGetSchema AHGS =
         (AppHomeGetSchema)config["AppHomeGetSchema"].as_integer()->get();
-    varInterpolationMgr->add({L"AppHome", getAppHomePathW(AHGS)});
 
-    varInterpolationMgr->add({L"ExeDir", getAppHomePathW(AHGS)});
-    varInterpolationMgr->add(
-        {L"ConfigDir",
-         std::filesystem::path(config_path).parent_path().wstring()});
+    varIntepoMgr->add({L"AppHome", getAppHomePathW(AHGS)});
+    varIntepoMgr->add({L"ExeDir", brv::strConvert(getExeDir())});
+    varIntepoMgr->add({L"ConfigDir", std::filesystem::path(config_path).parent_path()});
+
     const auto& user_defined_macros =
-        *config["user_defined_vars_list"].as_table();
+        *config["user_defined_var_list"].as_table();
     for (auto& [k, v] : user_defined_macros) {
       std::wstring u_m = brv::strConvert(k.str().data()),
                    u_v = brv::strConvert(v.as_string()->get());
-      varInterpolationMgr->add(
-          std::pair{u_m, varInterpolationMgr->replace(u_v)});
+      varIntepoMgr->add(std::pair{u_m, varIntepoMgr->replace(u_v)});
     }
     // FsConfig
     const toml::table& FsConfig = *config["FsConfig"].as_table();
     fs_config_.blacklist_mode = FsConfig["blacklist_mode"].as_boolean();
     for (auto& e : *FsConfig["excluded_path_list"].as_array()) {
       fs_config_.excluded_path_list.emplace_back(
-          varInterpolationMgr->replace(brv::strConvert(e.as_string()->get())));
+          varIntepoMgr->replace(brv::strConvert(e.as_string()->get())));
     }
     for (auto& e : *FsConfig["path_list"].as_array()) {
       fs_config_.path_list.emplace_back(
-          varInterpolationMgr->replace(brv::strConvert(e.as_string()->get())));
+          varIntepoMgr->replace(brv::strConvert(e.as_string()->get())));
     }
     // get redirection obj arr
     auto redirections = *config["redirection"].as_array();
@@ -70,8 +64,8 @@ export class ConfigMgr {
       auto old_ = brv::strConvert(redirection["old"].as_string()->get());
       auto new_ = brv::strConvert(redirection["new"].as_string()->get());
 
-      fs_config_.old2new.emplace(varInterpolationMgr->replace(old_),
-                                 varInterpolationMgr->replace(new_));
+      fs_config_.old2new.emplace(varIntepoMgr->replace(old_),
+                                 varIntepoMgr->replace(new_));
     }
     // for(auto& r:redirections)
     //{
@@ -81,6 +75,6 @@ export class ConfigMgr {
     //	fs_config_.old2new.emplace(std::pair(
     //	)
     // }
-    int i = 0;
+    int _ = 0;
   }
 };

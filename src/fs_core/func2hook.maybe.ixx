@@ -1,19 +1,42 @@
 ﻿module;
-#include <ntdll.h>
+#include <AclAPI.h>
+
 
 export module func2hook.maybe;
+import std;
+import fs_common;
+import PathJudge;
 
+//export {
+//  decltype(&GetNamedSecurityInfoW) GetNamedSecurityInfoW_raw =
+//      &GetNamedSecurityInfoW;
+//  DWORD GetNamedSecurityInfoW_mod(LPWSTR pObjectName, SE_OBJECT_TYPE ObjectType,
+//                                  SECURITY_INFORMATION SecurityInfo,
+//                                  PSID * ppsidOwner, PSID * ppsidGroup,
+//                                  PACL * ppDacl, PACL * ppSacl,
+//                                  PSECURITY_DESCRIPTOR * ppSecurityDescriptor) {
+//    wchar_t new_path[MAX_PATH + 1];
+//    auto path_judge = PathJudge::_ins_();
+//    if (path_judge->judgeAndRedirect(pObjectName, new_path,
+//                                     (int)std::size(new_path))) {
+//      pObjectName = new_path;
+//    }
+//    return GetNamedSecurityInfoW_raw(pObjectName, ObjectType, SecurityInfo,
+//                                     ppsidOwner, ppsidGroup, ppDacl, ppSacl,
+//                                     ppSecurityDescriptor);
+//  }
+//}
 // export {
 //
 //
 //	decltype(&NtQueryDirectoryFile) NtQueryDirectoryFile_raw =
-//NtQueryDirectoryFile;
+// NtQueryDirectoryFile;
 //
 //	auto NTAPI NtQueryDirectoryFile_mod(HANDLE FileHandle, HANDLE Event,
-//PIO_APC_ROUTINE ApcRoutine, 		PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock,
-//PVOID FileInformation, ULONG Length, 		FILE_INFORMATION_CLASS
-//FileInformationClass, BOOLEAN ReturnSingleEntry, PUNICODE_STRING FileName,
-//		BOOLEAN RestartScan)
+// PIO_APC_ROUTINE ApcRoutine, 		PVOID ApcContext, PIO_STATUS_BLOCK
+// IoStatusBlock, PVOID FileInformation, ULONG Length,
+// FILE_INFORMATION_CLASS FileInformationClass, BOOLEAN ReturnSingleEntry,
+// PUNICODE_STRING FileName, 		BOOLEAN RestartScan)
 //	{
 //		addFuncHit();
 //		NTSTATUS ret;
@@ -26,21 +49,23 @@ export module func2hook.maybe;
 //			if (path_judge->judgeAndModify(file_name, false))
 //			{
 //				consolePrint("NtQueryDirectoryFile =>" +
-//brv::strConvert(wstring(FileName->Buffer))); 				RtlInitUnicodeString(FileName,
-//(wchar_t*)file_name.c_str());
+// brv::strConvert(wstring(FileName->Buffer)));
+// RtlInitUnicodeString(FileName, (wchar_t*)file_name.c_str());
 //			}
 //			auto file_dir_info =
 //(FILE_ID_BOTH_DIR_INFO*)FileInformation;
 //
 //			ret = NtQueryDirectoryFile_raw(FileHandle, Event,
-//ApcRoutine, ApcContext, IoStatusBlock, 				FileInformation, Length,
-//FileInformationClass, ReturnSingleEntry, FileName, RestartScan); 			int i = 0;
+// ApcRoutine, ApcContext, IoStatusBlock,
+// FileInformation, Length, FileInformationClass, ReturnSingleEntry, FileName,
+// RestartScan); 			int i = 0;
 //		}
 //		else
 //		{
 //			ret = NtQueryDirectoryFile_raw(FileHandle, Event,
-//ApcRoutine, ApcContext, IoStatusBlock, 				FileInformation, Length,
-//FileInformationClass, ReturnSingleEntry, FileName, RestartScan);
+// ApcRoutine, ApcContext, IoStatusBlock,
+// FileInformation, Length, FileInformationClass, ReturnSingleEntry, FileName,
+// RestartScan);
 //		}
 //
 //
@@ -49,15 +74,15 @@ export module func2hook.maybe;
 //
 //
 //	decltype(&NtQueryInformationFile)NtQueryInformationFile_raw =
-//NtQueryInformationFile;
+// NtQueryInformationFile;
 //
 //
 //	decltype(&NtSetInformationFile) NtSetInformationFile_raw =
-//NtSetInformationFile;
+// NtSetInformationFile;
 //
 //	auto NTAPI NtSetInformationFile_mod(HANDLE FileHandle, PIO_STATUS_BLOCK
-//IoStatusBlock, 		PVOID FileInformation, 		ULONG Length, FILE_INFORMATION_CLASS
-//FileInformationClass)
+// IoStatusBlock, 		PVOID FileInformation, 		ULONG Length,
+// FILE_INFORMATION_CLASS FileInformationClass)
 //	{
 //		addFuncHit();
 //		NTSTATUS ret;
@@ -70,30 +95,32 @@ export module func2hook.maybe;
 //			auto file_info = (FILE_RENAME_INFO*)FileInformation;
 //
 //			wstring new_path(file_info->FileName,
-//file_info->FileNameLength / sizeof(wchar_t));
+// file_info->FileNameLength / sizeof(wchar_t));
 //
 //			if (path_judge->judgeAndModify(new_path, false))
 //			{
 //				ULONG fileNameLength = (ULONG)new_path.size() *
-//sizeof(WCHAR); 				ULONG file_info_size = sizeof(FILE_RENAME_INFO) +
-//fileNameLength; //- sizeof(WCHAR); 				std::vector<BYTE> buffer(file_info_size);
-//				auto file_info_new =
-//reinterpret_cast<FILE_RENAME_INFO*>(buffer.data());
+// sizeof(WCHAR); 				ULONG file_info_size =
+// sizeof(FILE_RENAME_INFO) + fileNameLength; //- sizeof(WCHAR);
+// std::vector<BYTE> buffer(file_info_size); 				auto file_info_new =
+// reinterpret_cast<FILE_RENAME_INFO*>(buffer.data());
 //				file_info_new->ReplaceIfExists =
-//file_info->ReplaceIfExists; // 或TRUE，根据需要 				file_info_new->RootDirectory =
-//file_info->RootDirectory; // 或有效的目录句柄 				file_info_new->FileNameLength =
-//fileNameLength;
+// file_info->ReplaceIfExists; // 或TRUE，根据需要
+// file_info_new->RootDirectory = file_info->RootDirectory; // 或有效的目录句柄
+// file_info_new->FileNameLength = fileNameLength;
 //				// 复制新文件名
 //				memcpy(file_info_new->FileName,
-//new_path.c_str(), fileNameLength);
+// new_path.c_str(), fileNameLength);
 //
 //				ret = NtSetInformationFile_raw(FileHandle,
-//IoStatusBlock, file_info_new, file_info_size, 					FileInformationClass);
+// IoStatusBlock, file_info_new, file_info_size,
+// FileInformationClass);
 //			}
 //			else//不需要重定向的目录
 //			{
 //				ret = NtSetInformationFile_raw(FileHandle,
-//IoStatusBlock, FileInformation, Length, 					FileInformationClass);
+// IoStatusBlock, FileInformation, Length,
+// FileInformationClass);
 //			}
 //		}
 //		else
@@ -101,28 +128,31 @@ export module func2hook.maybe;
 //			if (FileInformationClass == FileDispositionInformation)
 //			{
 //				static FILE_DISPOSITION_INFO*
-//last_file_disposition = nullptr;
+// last_file_disposition = nullptr;
 //				//意向 删除文件?
 //				auto file_disposition_inf =
 //(FILE_DISPOSITION_INFO*)FileInformation;
 //
 //				consolePrint("NtSetInfo Delete File/Dir =>" +
-//brv::strConvert(path)); 				ret = NtSetInformationFile_raw(FileHandle,
-//IoStatusBlock, file_disposition_inf, Length, 					FileInformationClass);
+// brv::strConvert(path)); 				ret =
+// NtSetInformationFile_raw(FileHandle, IoStatusBlock, file_disposition_inf,
+// Length, 					FileInformationClass);
 //			}
 //			else if (FileInformationClass ==
-//FileDispositionInformationEx)
+// FileDispositionInformationEx)
 //			{
 //				auto file_disposition_inf =
 //(FILE_DISPOSITION_INFO_EX*)FileInformation;//意向 删除文件?
 //				consolePrint("NtSetInfo DeleteEx File/Dir =>" +
-//brv::strConvert(path)); 				ret = NtSetInformationFile_raw(FileHandle,
-//IoStatusBlock, file_disposition_inf, Length, 					FileInformationClass);
+// brv::strConvert(path)); 				ret =
+// NtSetInformationFile_raw(FileHandle, IoStatusBlock, file_disposition_inf,
+// Length, 					FileInformationClass);
 //			}
 //			else
 //			{
 //				ret = NtSetInformationFile_raw(FileHandle,
-//IoStatusBlock, FileInformation, Length, 					FileInformationClass);
+// IoStatusBlock, FileInformation, Length,
+// FileInformationClass);
 //			}
 //		}
 //

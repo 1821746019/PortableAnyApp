@@ -4,6 +4,7 @@ import std;
 import Hooker;
 import func2hook;
 import func2hook.kernelbase;
+import func2hook.maybe;
 import VarInterpolationMgr;
 import ConfigMgr;
 import fs_common;
@@ -25,16 +26,28 @@ void setHook() {
       {&NtQueryFullAttributesFile_raw, &NtQueryFullAttributesFile_mod},
       {&NtQueryAttributesFile_raw, &NtQueryAttributesFile_mod},
       {&NtOpenSymbolicLinkObject_raw, &NtOpenSymbolicLinkObject_mod},
+      {&NtDeviceIoControlFile_raw, &NtDeviceIoControlFile_mod},
       //{ &NtQueryDirectoryFile_raw, &NtQueryDirectoryFile_mod },
       //{ &NtSetInformationFile_raw, &NtSetInformationFile_mod },
       {&MoveFileWithProgressTransactedW_raw,
        &MoveFileWithProgressTransactedW_mod},
       {&FindFirstFileExW_raw, &FindFirstFileExW_mod},
       {&FindNextFileW_raw, &FindNextFileW_mod},
+      //{&CreateFileW_raw, &CreateFileW_mod},
+      //{&CreateFile2_raw, &CreateFile2_mod},
+      //{&CreateFileA_raw, &CreateFileA_mod},
+      //{&CreateDirectoryW_raw, &CreateDirectoryW_mod},
+      //{&CreateDirectoryExW_raw, &CreateDirectoryExW_mod},
+      // improve the compatibility for win11, need to hook the following
+      // functions
+      {&DeleteFileW_raw,
+       &DeleteFileW_mod},  // DeleteFileW will call NtSetInformationFile inside
+                           // but no hook for NtSetInformationFile. Is this hook
+                           // necessary?
+
   });
 
-  // hooker.endeque({
-  //	});
+  // hooker.endeque({&GetNamedSecurityInfoW_raw, &GetNamedSecurityInfoW_mod});
   hooker.setHook();
 }
 

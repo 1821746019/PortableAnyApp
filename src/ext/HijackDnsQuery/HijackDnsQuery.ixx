@@ -20,13 +20,12 @@ class ConfigMgr {
   void initFinalConfigContent() {
     fs::path config_path =
         (selfDir / fs::path(__FILE__).filename().replace_extension(".toml"));
-    ifstream ifs(config_path);
-
-    if (!ifs)
-      MessageBoxA(
-          nullptr,
+    if (!fs::exists(config_path)) {
+      throw fs::filesystem_error(
           format("Please make sure the {} exists", config_path.string()).data(),
-          "File Not Found", MB_ICONERROR);
+          config_path, make_error_code(errc::no_such_file_or_directory));
+    }
+    ifstream ifs(config_path);
     configContent_ =
         string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
   }
@@ -40,7 +39,7 @@ class ConfigMgr {
     initFinalConfigContent();
     config_ = toml::parse(configContent_);
   }
-  inline static unique_ptr<ConfigMgr> ins_=nullptr;
+  inline static unique_ptr<ConfigMgr> ins_ = nullptr;
 
  public:
   ConfigMgr(const ConfigMgr&) = delete;
@@ -56,7 +55,7 @@ class ConfigMgr {
     return domainBlockList_.contains(domain);
   }
 };
-static ConfigMgr& configMgr = ConfigMgr::_ins_();
+
 decltype(&DnsQuery_W) DnsQuery_W_raw = &DnsQuery_W;
 
 DNS_STATUS WINAPI DnsQuery_W_mod(PCWSTR pszName,
@@ -65,7 +64,7 @@ DNS_STATUS WINAPI DnsQuery_W_mod(PCWSTR pszName,
                                  PVOID pExtra,
                                  PDNS_RECORD* ppQueryResults,
                                  PVOID* pReserved) {
-  bool isBlocked = configMgr.isNeedBlocking(pszName);
+  bool isBlocked = ConfigMgr::_ins_().isNeedBlocking(pszName);
 
   return isBlocked ? 1
                    : DnsQuery_W_raw(pszName, wType, Options, pExtra,
@@ -77,13 +76,14 @@ INT WSAAPI getaddrinfo_mod(PCSTR pNodeName,
                            const ADDRINFOA* pHints,
                            PADDRINFOA* ppResult) {
   bool isBlocked =
-      configMgr.isNeedBlocking(filesystem::path(pNodeName).wstring());
+      ConfigMgr::_ins_().isNeedBlocking(filesystem::path(pNodeName).wstring());
   return isBlocked ? 0
                    : getaddrinfo_raw(pNodeName, pServiceName, pHints, ppResult);
 }
 decltype(&gethostbyname) gethostbyname_raw = &gethostbyname;
 struct hostent* WSAAPI gethostbyname_mod(const char* name) {
-  bool isBlocked = configMgr.isNeedBlocking(filesystem::path(name).wstring());
+  bool isBlocked =
+      ConfigMgr::_ins_().isNeedBlocking(filesystem::path(name).wstring());
   return isBlocked ? nullptr : gethostbyname_raw(name);
 }
 void setHook() {
@@ -97,12 +97,18 @@ void setHook() {
   hooker.setHook();
 }
 
-extern "C" __declspec(dllexport) BOOL APIENTRY DllMain(HMODULE hModule,
-                                                       DWORD dwReson,
-                                                       LPVOID lpReserved) {
-  // DisableThreadLibraryCalls(hModule);
-  if (dwReson == DLL_PROCESS_ATTACH) {
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReson, LPVOID lpReserved) {
+  if (dwReson != DLL_PROCESS_ATTACH)
+    return TRUE;
+
+  DisableThreadLibraryCalls(hModule);
+
+  // init the ConfigMgr
+  try {
+    ConfigMgr::_ins_();
     setHook();
+  } catch (const exception& e) {
+    MessageBoxA(nullptr, e.what(), "Exception occured", MB_ICONERROR);
+    exit(-1);
   }
-  return TRUE;
 }

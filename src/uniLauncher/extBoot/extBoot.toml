@@ -1,0 +1,10 @@
+
+# TOP_PROCESS_NAME is the processName of the process loading extBoot.dll firstly
+
+[[processName2dllList]]
+processName="${TOP_PROCESS_NAME}"
+dllList = ["/.*/"]
+
+[[processName2dllList]]
+processName="/.*/"
+dllList = ["fs_redirector.dll"]
