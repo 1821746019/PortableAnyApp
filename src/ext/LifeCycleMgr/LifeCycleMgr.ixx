@@ -136,7 +136,7 @@ class AtExit {
   AtExit& operator=(const AtExit&) = delete;
 };
 void execWithConfig(const toml::table& config) {
-  fs::path baseDir = selfDir;
+  fs::path baseDir = selfDir();
   // proc for beforeRunning
   auto beforeRunningObjList = *config["beforeRunning"].as_array();
   for (auto& obj : beforeRunningObjList) {

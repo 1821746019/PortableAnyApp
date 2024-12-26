@@ -19,7 +19,7 @@ class ConfigMgr {
   set<wstring> domainBlockList_;
   void initFinalConfigContent() {
     fs::path config_path =
-        (selfDir / fs::path(__FILE__).filename().replace_extension(".toml"));
+        (selfDir() / fs::path(__FILE__).filename().replace_extension(".toml"));
     if (!fs::exists(config_path)) {
       throw fs::filesystem_error(
           format("Please make sure the {} exists", config_path.string()).data(),

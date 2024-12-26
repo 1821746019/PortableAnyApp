@@ -17,6 +17,11 @@ set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 add_compile_definitions($<$<CONFIG:Debug>:BS_DBG>)
 #if("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
 if(MSVC)
+    # code elimination for release build
+    if(CMAKE_BUILD_TYPE MATCHES "^Rel")
+      # pure unused code: /OPT:REF /GL /LTCG ; code fold:  /OPT:ICF
+       add_link_options(/OPT:REF /OPT:ICF /GL /LTCG)
+    endif()
     #Do not use MDd runtime libaray
     #add_definitions(-U_DEBUG)
     #set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")

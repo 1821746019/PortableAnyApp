@@ -36,10 +36,11 @@ foreach(e ${all_targets})
     endif()
     target_precompile_headers(${e} REUSE_FROM pch)
     add_dependencies(build_ext ${e})
-    #
+    # ext 默认都连接versionForge、winmmForge库以供单独使用
+    target_link_libraries(${e} PRIVATE versionForged winmmForged)
+    # generate toml file for each ext if not exist
+    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/${e}/${e}.toml)
     add_custom_command(TARGET ${e} POST_BUILD
-        # generate toml file for each ext if not exist
-        COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_SOURCE_DIR}/${e}/${e}.toml
         # copy dll to install folder
 
         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:${e}>
@@ -61,3 +62,14 @@ add_custom_command(TARGET ${curr_target} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${curr_target}>"
     "D:/Program/Productivity/Utils/PixPin/v1.9.5/App/version.dll"
 )
+
+set(curr_target  RegCore)
+#bs_add_lib(${curr_target} SHARED *.ixx)
+target_link_libraries(${curr_target} PRIVATE ntdll advapi32Forged advapi32
+kernel32
+crypt32
+bcrypt
+wbemuuid)
+target_link_libraries(${curr_target} PRIVATE winreg Hooker)
+
+#set(curr_target UniqueWindowGroup)

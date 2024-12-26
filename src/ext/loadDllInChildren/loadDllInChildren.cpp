@@ -70,7 +70,7 @@ bool isNeedLoading(wstring_view cmdline) {
   // reduce the usage of global var as much as possible, make it static so it
   // just be inited once
   static toml::parse_result config =
-      toml::parse_file((selfDir / "loadDllInChildren.toml").wstring());
+      toml::parse_file((selfDir() / "loadDllInChildren.toml").wstring());
   // 获取配置
   bool isBlackListMode = config["isBlacklistMode"].as_boolean();
   auto str2wstr = [](const string& e) { return fs::path(e).wstring(); };

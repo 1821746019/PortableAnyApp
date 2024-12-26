@@ -6,11 +6,15 @@ export module spdlogger;
 import std;
 
 export namespace winEventLogger {
-spdlog::logger logger("win_event_logger",
-                      std::make_shared<spdlog::sinks::win_eventlog_sink_mt>([] {
-                        std::string exeName(MAX_PATH, 0);
-                        GetModuleFileNameA(GetModuleHandle(nullptr),
-                                           exeName.data(), exeName.size());
-                        return exeName.substr(exeName.rfind("\\") + 1);
-                      }()));
-}
+spdlog::logger logger() {
+  static spdlog::logger logger(
+      "win_event_logger",
+      std::make_shared<spdlog::sinks::win_eventlog_sink_mt>([] {
+        std::string exeName(MAX_PATH, 0);
+        GetModuleFileNameA(GetModuleHandle(nullptr), exeName.data(),
+                           exeName.size());
+        return exeName.substr(exeName.rfind("\\") + 1);
+      }()));
+  return logger;
+};
+}  // namespace winEventLogger

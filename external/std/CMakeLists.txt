@@ -2,13 +2,15 @@
 set(lib_name std)
 
 string(REGEX REPLACE "\/bin\/Hostx(64|86)\/x(64|86)\/cl\.exe" "" MSVC_ROOT ${CMAKE_CXX_COMPILER})
+
+
+#  坑! 若目标文件已存在且内容相同则不会复制，修改日期不会变
 # 在配置阶段复制 std.ixx
 configure_file(
     "${MSVC_ROOT}/modules/std.ixx" # 源文件路径
     "${CMAKE_CURRENT_SOURCE_DIR}/std.ixx" # 目标文件路径
     COPYONLY # 仅复制，不进行变量替换
 )
-
 # 在配置阶段复制 std.compat.ixx
 configure_file(
     "${MSVC_ROOT}/modules/std.compat.ixx" # 源文件路径

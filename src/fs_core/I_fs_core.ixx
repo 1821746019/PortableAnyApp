@@ -21,16 +21,19 @@ void setHook() {
 
   hooker.endeque({
       {&NtCreateFile_raw, &NtCreateFile_mod},
+      {&NtCreatePort_raw, &NtCreatePort_mod},
+      {&NtCreateNamedPipeFile_raw, &NtCreateNamedPipeFile_mod},
       {&NtOpenFile_raw, &NtOpenFile_mod},
       {&NtDeleteFile_raw, &NtDeleteFile_mod},
       {&NtQueryFullAttributesFile_raw, &NtQueryFullAttributesFile_mod},
       {&NtQueryAttributesFile_raw, &NtQueryAttributesFile_mod},
       {&NtOpenSymbolicLinkObject_raw, &NtOpenSymbolicLinkObject_mod},
-      {&NtDeviceIoControlFile_raw, &NtDeviceIoControlFile_mod},
+      //{&NtDeviceIoControlFile_raw, &NtDeviceIoControlFile_mod},
       //{ &NtQueryDirectoryFile_raw, &NtQueryDirectoryFile_mod },
       //{ &NtSetInformationFile_raw, &NtSetInformationFile_mod },
       {&MoveFileWithProgressTransactedW_raw,
        &MoveFileWithProgressTransactedW_mod},
+      {&FindFirstFileW_raw, &FindFirstFileW_mod},
       {&FindFirstFileExW_raw, &FindFirstFileExW_mod},
       {&FindNextFileW_raw, &FindNextFileW_mod},
       //{&CreateFileW_raw, &CreateFileW_mod},
@@ -40,10 +43,8 @@ void setHook() {
       //{&CreateDirectoryExW_raw, &CreateDirectoryExW_mod},
       // improve the compatibility for win11, need to hook the following
       // functions
-      {&DeleteFileW_raw,
-       &DeleteFileW_mod},  // DeleteFileW will call NtSetInformationFile inside
-                           // but no hook for NtSetInformationFile. Is this hook
-                           // necessary?
+      // DeleteFileW will call NtOpenFile firstly, so no need to hook it
+      //{&DeleteFileW_raw, &DeleteFileW_mod},
 
   });
 

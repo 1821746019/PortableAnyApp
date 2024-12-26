@@ -28,3 +28,9 @@ add_dependencies(testApp extBoot loadDllInChildren allocConsole )
 
 set(exe_name tmp)
 bs_add_exe(${exe_name} tmp.ixx)
+target_precompile_headers(${exe_name} REUSE_FROM winreg)
+target_link_libraries(${exe_name} PRIVATE RegCore)
+
+set(exe_name RegParser)
+
+bs_add_exe(${exe_name} RegParser.ixx)

@@ -110,6 +110,8 @@ export {
       LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName,
       LPPROGRESS_ROUTINE lpProgressRoutine, LPVOID lpData, DWORD dwFlags,
       HANDLE hTransaction) {
+    if (!lpExistingFileName || !lpNewFileName)
+      return false;
     wchar_t src_new[MAX_PATH + 1], dst_new[MAX_PATH + 1];
     auto path_judge = PathJudge::_ins_();
     if (path_judge->judgeAndRedirect(lpExistingFileName, src_new,
@@ -119,7 +121,7 @@ export {
     if (path_judge->judgeAndRedirect(lpNewFileName, dst_new,
                                      (int)std::size(dst_new))) {
       lpNewFileName = dst_new;
-    } else  // 判断 lpNewFileName 是否以 C:\$RECYCLE.BIN\ 开头（忽略大小写）
+    } else  // 判断 lpNewFileName 是否是recycle bin 的路径
     {
       constexpr wchar_t RECYCLE_BN_PREFIX[] = LR"(:\$RECYCLE.BIN\)";
       if (_wcsnicmp(lpNewFileName + 1, RECYCLE_BN_PREFIX,
@@ -134,6 +136,18 @@ export {
                                                lpNewFileName, lpProgressRoutine,
                                                lpData, dwFlags, hTransaction);
   }
+  decltype(&FindFirstFileW) FindFirstFileW_raw = &FindFirstFileW;
+  HANDLE WINAPI FindFirstFileW_mod(LPCWSTR lpFileName,
+                                   LPWIN32_FIND_DATAW lpFindFileData) {
+    wchar_t new_path[MAX_PATH + 1];
+    auto path_judge = PathJudge::_ins_();
+    if (path_judge->judgeAndRedirect(lpFileName, new_path,
+                                     (int)std::size(new_path))) {
+      lpFileName = new_path;
+    }
+    return FindFirstFileW_raw(lpFileName, lpFindFileData);
+  }
+  
   decltype(&FindFirstFileExW) FindFirstFileExW_raw = &FindFirstFileExW;
   HANDLE WINAPI FindFirstFileExW_mod(
       LPCWSTR lpFileName, FINDEX_INFO_LEVELS fInfoLevelId,
@@ -160,6 +174,7 @@ export {
     }
     return FindNextFileW_raw(hFindFile, lpFindFileData);
   }
+
   // decltype(&RemoveDirectoryW) RemoveDirectoryW_raw = &RemoveDirectoryW;
   // BOOL WINAPI RemoveDirectoryW_mod(LPCWSTR lpPathName) {
   //   wchar_t new_path[MAX_PATH + 1];

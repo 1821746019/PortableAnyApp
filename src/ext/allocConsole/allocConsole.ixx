@@ -93,7 +93,7 @@ class ConfigMgr {
   }
   void initFinalConfigContent() {
     fs::path config_path =
-        (selfDir / fs::path(__FILE__).filename().replace_extension(".toml"));
+        (selfDir() / fs::path(__FILE__).filename().replace_extension(".toml"));
     ifstream ifs(config_path);
 
     if (!ifs)

@@ -1,6 +1,7 @@
 ﻿module;
-#include "ntdll.h"
 #include <stdint.h>
+#include <ntdll.h>
+
 // #include <NTLib.h>
 export module func2hook;
 
@@ -9,11 +10,11 @@ import PathJudge;
 import std;
 // 确保ObjectAttributes->ObjectName->Buffer的内存在此作用域内有效
 // UNICODE_STRING效果同上
-#define procRedirect()                   \
-  std::wstring new_path_buffer;          \
-  UNICODE_STRING new_path;               \
-  auto is_redirected = judgeAndRedirect( \
-      ObjectAttributes, new_path_buffer, new_path, __FUNCTION__)
+#define procRedirect()                                                     \
+  std::wstring new_path_buffer;                                            \
+  UNICODE_STRING new_path;                                                 \
+  auto is_redirected = judgeAndRedirect(ObjectAttributes, new_path_buffer, \
+                                        new_path, __FUNCTION__)
 
 // bool judgeAndRedirect(POBJECT_ATTRIBUTES old_PA, UNICODE_STRING* _new_path,
 // const char* func_name = nullptr)
@@ -38,10 +39,10 @@ void InitUnicodeString(PUNICODE_STRING DestinationString, PCWSTR SourceString) {
 }
 
 bool doRedirect(const POBJECT_ATTRIBUTES OA,
-    POBJECT_ATTRIBUTES _objAtrr_new,
-    UNICODE_STRING* _filePath,
-    wchar_t* _buffer,
-    int len) {
+                POBJECT_ATTRIBUTES _objAtrr_new,
+                UNICODE_STRING* _filePath,
+                wchar_t* _buffer,
+                int len) {
   PathJudge* path_judge = PathJudge::_ins_();
   if (!path_judge)
     return false;
@@ -55,8 +56,9 @@ bool doRedirect(const POBJECT_ATTRIBUTES OA,
     InitUnicodeString(_filePath, _buffer);
 
     // 初始化 OBJECT_ATTRIBUTES
-    InitializeObjectAttributes(_objAtrr_new,  // ObjectAttributes
-        _filePath,                            // ObjectName
+    InitializeObjectAttributes(
+        _objAtrr_new,  // ObjectAttributes
+        _filePath,     // ObjectName
         OA->Attributes, OA->RootDirectory,
         OA->SecurityDescriptor  // TODO:
                                 // OBJ_CASE_INSENSITIVE,  // Attributes
@@ -72,14 +74,15 @@ bool doRedirect(const POBJECT_ATTRIBUTES OA,
   UNICODE_STRING filePath;                                          \
   wchar_t buffer[MAX_PATH + 1];                                     \
   if (doRedirect(ObjectAttributes, &objAtrr_new, &filePath, buffer, \
-          (int)std::size(buffer))) {                                \
+                 (int)std::size(buffer))) {                         \
     ObjectAttributes = &objAtrr_new;                                \
   };
 
 export {
   decltype(&NtCreateFile) NtCreateFile_raw = &NtCreateFile;
 
-  auto NTAPI NtCreateFile_mod(PHANDLE FileHandle, ACCESS_MASK DesiredAccess,
+  auto NTAPI NtCreateFile_mod(
+      PHANDLE FileHandle, ACCESS_MASK DesiredAccess,
       POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock,
       PLARGE_INTEGER AllocationSize, ULONG FileAttributes, ULONG ShareAccess,
       ULONG CreateDisposition, ULONG CreateOptions, PVOID EaBuffer,
@@ -87,20 +90,22 @@ export {
     redirectIt;
 
     auto ret = NtCreateFile_raw(FileHandle, DesiredAccess, ObjectAttributes,
-        IoStatusBlock, AllocationSize, FileAttributes, ShareAccess,
-        CreateDisposition, CreateOptions, EaBuffer, EaLength);
+                                IoStatusBlock, AllocationSize, FileAttributes,
+                                ShareAccess, CreateDisposition, CreateOptions,
+                                EaBuffer, EaLength);
 
     return ret;
   };
   decltype(&NtOpenFile) NtOpenFile_raw = &NtOpenFile;
 
   auto NTAPI NtOpenFile_mod(PHANDLE FileHandle, ACCESS_MASK DesiredAccess,
-      POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock,
-      ULONG ShareAccess, ULONG OpenOptions) {
+                            POBJECT_ATTRIBUTES ObjectAttributes,
+                            PIO_STATUS_BLOCK IoStatusBlock, ULONG ShareAccess,
+                            ULONG OpenOptions) {
     redirectIt;
 
     NTSTATUS ret = NtOpenFile_raw(FileHandle, DesiredAccess, ObjectAttributes,
-        IoStatusBlock, ShareAccess, OpenOptions);
+                                  IoStatusBlock, ShareAccess, OpenOptions);
 
     return ret;
   };
@@ -108,11 +113,12 @@ export {
       &NtOpenSymbolicLinkObject;
 
   auto NTAPI NtOpenSymbolicLinkObject_mod(PHANDLE LinkHandle,
-      ACCESS_MASK DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes) {
+                                          ACCESS_MASK DesiredAccess,
+                                          POBJECT_ATTRIBUTES ObjectAttributes) {
     redirectIt;
 
-    NTSTATUS ret = NtOpenSymbolicLinkObject_raw(
-        LinkHandle, DesiredAccess, ObjectAttributes);
+    NTSTATUS ret = NtOpenSymbolicLinkObject_raw(LinkHandle, DesiredAccess,
+                                                ObjectAttributes);
 
     return ret;
   };
@@ -122,12 +128,13 @@ export {
     redirectIt;
     return NtDeleteFile_raw(ObjectAttributes);
   };
-  //decltype(&NtDeviceIoControlFile)
+  // decltype(&NtDeviceIoControlFile)
 
   decltype(&NtQueryAttributesFile) NtQueryAttributesFile_raw =
       &NtQueryAttributesFile;
 
-  auto NTAPI NtQueryAttributesFile_mod(POBJECT_ATTRIBUTES ObjectAttributes,
+  auto NTAPI NtQueryAttributesFile_mod(
+      POBJECT_ATTRIBUTES ObjectAttributes,
       PFILE_BASIC_INFORMATION FileInformation) {
     redirectIt;
 
@@ -135,55 +142,61 @@ export {
   };
   decltype(&NtQueryFullAttributesFile) NtQueryFullAttributesFile_raw =
       &NtQueryFullAttributesFile;
-
-  auto NTAPI NtQueryFullAttributesFile_mod(POBJECT_ATTRIBUTES ObjectAttributes,
+  auto NTAPI NtQueryFullAttributesFile_mod(
+      POBJECT_ATTRIBUTES ObjectAttributes,
       PFILE_NETWORK_OPEN_INFORMATION FileInformation) {
     redirectIt;
     return NtQueryFullAttributesFile_raw(ObjectAttributes, FileInformation);
   }
-  decltype(&NtDeviceIoControlFile) NtDeviceIoControlFile_raw =
-      &NtDeviceIoControlFile;
-  auto NTAPI NtDeviceIoControlFile_mod(
-      HANDLE FileHandle, HANDLE Event, PIO_APC_ROUTINE ApcRoutine,
-      PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, ULONG IoControlCode,
-      PVOID InputBuffer, ULONG InputBufferLength, PVOID OutputBuffer,
-      ULONG OutputBufferLength) {
-    //redirectIt;
-    //get the path from FileHandle
-    wchar_t buffer[MAX_PATH + 1];
-    DWORD result=GetFinalPathNameByHandleW(FileHandle, buffer, std::size(buffer), VOLUME_NAME_DOS);
-    if (result == 0) {
-      std::cerr << "Failed to get file path, error code: " << GetLastError()
-                << std::endl;
-    } else {
-      std::cout << "File Path: ";
-      //<< buffer << std::endl;
-    }
-    //PathJudge* path_judge = PathJudge::_ins_();
-    //if (path_judge->judgeAndRedirect(buffer, buffer, (int)std::size(buffer))) {
-    //  // IoStatusBlock->Information = 0;
-    //  //return STATUS_SUCCESS;
-    //  int _ = 0;
-    //}
-    return NtDeviceIoControlFile_raw(
-        FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, IoControlCode,
-        InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength);
+
+  NTSTATUS NtCreatePort(PHANDLE PortHandle, POBJECT_ATTRIBUTES ObjectAttributes,
+                        ULONG MaxConnectionInfoLength, ULONG MaxMessageLength,
+                        ULONG MaxPoolUsage);
+  decltype(&NtCreatePort) NtCreatePort_raw = [] {
+    auto ret = (decltype(&NtCreatePort))GetProcAddress(
+        LoadLibraryA("ntdll.dll"), "NtCreatePort");
+    return ret;
+  }();
+  auto NTAPI NtCreatePort_mod(PHANDLE PortHandle,
+                              POBJECT_ATTRIBUTES ObjectAttributes,
+                              ULONG MaxConnectionInfoLength,
+                              ULONG MaxMessageLength, ULONG MaxPoolUsage) {
+    redirectIt;
+    return NtCreatePort_raw(PortHandle, ObjectAttributes,
+                            MaxConnectionInfoLength, MaxMessageLength,
+                            MaxPoolUsage);
   }
-  //decltype(&NtSetInformationFile) NtSetInformationFile_raw =
-  //    &NtSetInformationFile;
-  //struct FILE_LINK_INFORMATION {
-  //  BOOLEAN ReplaceIfExists;
-  //  HANDLE RootDirectory;
-  //  ULONG FileNameLength;
-  //  WCHAR FileName[1];
-  //};
-  //NTSTATUS NTAPI NtSetInformationFile_mod(HANDLE FileHandle,
-  //    PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, ULONG Length,
-  //    FILE_INFORMATION_CLASS FileInformationClass) {
-  //  FILE_RENAME_INFO* FRI_new = nullptr;
-  //  FILE_LINK_INFORMATION* FLI_new = nullptr;
-  //  wchar_t path_old[MAX_PATH + 1];
-  //  wchar_t path_new[MAX_PATH + 1];
+  decltype(&NtCreateNamedPipeFile) NtCreateNamedPipeFile_raw =
+      &NtCreateNamedPipeFile;
+  auto NTAPI NtCreateNamedPipeFile_mod(
+      PHANDLE FileHandle, ULONG DesiredAccess,
+      POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock,
+      ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions,
+      ULONG NamedPipeType, ULONG ReadMode, ULONG CompletionMode,
+      ULONG MaximumInstances, ULONG InboundQuota, ULONG OutboundQuota,
+      PLARGE_INTEGER DefaultTimeout) {
+    redirectIt;
+    return NtCreateNamedPipeFile_raw(
+        FileHandle, DesiredAccess, ObjectAttributes, IoStatusBlock, ShareAccess,
+        CreateDisposition, CreateOptions, NamedPipeType, ReadMode,
+        CompletionMode, MaximumInstances, InboundQuota, OutboundQuota,
+        DefaultTimeout);
+  }
+  // decltype(&NtSetInformationFile) NtSetInformationFile_raw =
+  //     &NtSetInformationFile;
+  // struct FILE_LINK_INFORMATION {
+  //   BOOLEAN ReplaceIfExists;
+  //   HANDLE RootDirectory;
+  //   ULONG FileNameLength;
+  //   WCHAR FileName[1];
+  // };
+  // NTSTATUS NTAPI NtSetInformationFile_mod(HANDLE FileHandle,
+  //     PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, ULONG Length,
+  //     FILE_INFORMATION_CLASS FileInformationClass) {
+  //   FILE_RENAME_INFO* FRI_new = nullptr;
+  //   FILE_LINK_INFORMATION* FLI_new = nullptr;
+  //   wchar_t path_old[MAX_PATH + 1];
+  //   wchar_t path_new[MAX_PATH + 1];
 
   //  // rename file
   //  if (FileInformationClass == FileRenameInformation) {
@@ -215,14 +228,15 @@ export {
   //      auto path_len = wcslen(path_new);
   //      uint32_t path_byte_num = uint32_t(path_len + 1) * sizeof(wchar_t);
 
-  //      FLI_new = (FILE_LINK_INFORMATION*)new uint8_t[sizeof(FILE_RENAME_INFO) +
+  //      FLI_new = (FILE_LINK_INFORMATION*)new uint8_t[sizeof(FILE_RENAME_INFO)
+  //      +
   //                                                    path_byte_num];
   //      *FLI_new = *FLI;
   //      FLI_new->FileNameLength = path_byte_num;
   //      memcpy(FLI_new->FileName, path_new, path_byte_num);
   //      FLI_new->FileName[path_len] = 0;
   //    }
-  //  } 
+  //  }
 
   //  if (FRI_new)  // not nullptr indicates it was redirected
   //  {

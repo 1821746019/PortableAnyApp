@@ -14,7 +14,7 @@ target_link_libraries(${lib_name} PRIVATE MyLib)
 link_libraries(${lib_name})
 bs_add_all_subdir_if_exist()
 
-get_dir_targetList(targetList ${CMAKE_CURRENT_LIST_DIR}/**)
+#get_dir_targetList(targetList ${CMAKE_CURRENT_LIST_DIR}/**)
 
 # foreach(target_name ${targetList})
 # find_package(spdlog CONFIG REQUIRED)

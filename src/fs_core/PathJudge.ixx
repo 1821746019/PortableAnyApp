@@ -5,7 +5,7 @@ export module PathJudge;
 import std;
 
 import FsConfig;
-
+import fs_common;
 export {
   constexpr auto NT_PREFIX_W = L"\\??\\";
   constexpr auto NT_PREFIX_LEN = 4;
@@ -220,21 +220,57 @@ bool PathJudge::redirect(const wchar_t* old,
 // #ifndef BS_DBG
 // #define  dbgOutput
 // #endif
+// 预处理路径函数，接受一个可修改的 wchar_t 缓冲区
+void preprocPath(const wchar_t* src, wchar_t* dst, size_t dstSize) {
+  if (src == nullptr) {
+    wcerr << L"路径指针为空。" << endl;
+    return;
+  }
 
+  // 获取用户主目录的长路径
+  wstring userHomePath = getUserHomePath();
+
+  // 定义正则表达式和对应的替换字符串
+  vector<pair<wregex, wstring>> regexMap = {
+      {wregex(LR"(C:\\Users\\[^\\~]{1,}~\d+\\)"), userHomePath + L"\\"}};
+
+  wstring originalPath(src);
+  wstring modifiedPath = originalPath;
+
+  for (const auto& [regexPattern, replacement] : regexMap) {
+    if (regex_search(modifiedPath, regexPattern)) {
+      modifiedPath = regex_replace(modifiedPath, regexPattern, replacement);
+    }
+  }
+
+  // 确保修改后的路径不会超出缓冲区
+  if (modifiedPath.length() >= dstSize) {
+    wcerr << L"修改后的路径长度超过缓冲区大小。" << endl;
+    return;
+  }
+
+  // 复制修改后的路径回原缓冲区
+  wcscpy_s(dst, dstSize, modifiedPath.c_str());
+}
 bool PathJudge::judgeAndRedirect(const wchar_t* old,
                                  wchar_t* buffer,
                                  int len) const {
   if (!old)
     return false;
   bool ret = false;
+
+  auto old_preproced = unique_ptr<wchar_t>(new wchar_t[len]);
+  preprocPath(old, old_preproced.get(), len);
   JudgeContext context;
-  bool is_nt_path = (_wcsnicmp(old, NT_PREFIX_W, NT_PREFIX_LEN) == 0);
-  if (judge(old, &context, is_nt_path)) {
-    ret = redirect(old, &context, buffer, len, is_nt_path);
+  bool is_nt_path =
+      (_wcsnicmp(old_preproced.get(), NT_PREFIX_W, NT_PREFIX_LEN) == 0);
+  if (judge(old_preproced.get(), &context, is_nt_path)) {
+    ret = redirect(old_preproced.get(), &context, buffer, len, is_nt_path);
     OutputDebugStringW(
-        (format(L"[Redirected]: {}\n=>{}\n", old, buffer).data()));
+        (format(L"[Redirected]: {}\n=>{}\n", old_preproced.get(), buffer)
+             .data()));
   } else {
-    OutputDebugStringW((format(L"[Bypass]: {}\n", old).data()));
+    OutputDebugStringW((format(L"[Bypass]: {}\n", old_preproced.get()).data()));
   }
   return ret;
 }
