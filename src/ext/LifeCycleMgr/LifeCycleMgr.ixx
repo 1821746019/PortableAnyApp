@@ -4,7 +4,7 @@ module;
 export module _;
 
 import std;
-import selfDir;
+import selfInfo;
 using namespace std;
 namespace fs = std::filesystem;
 

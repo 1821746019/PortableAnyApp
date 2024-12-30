@@ -6,7 +6,7 @@ import Hooker;
 using namespace std;
 namespace fs = filesystem;
 
-import selfDir;
+import selfInfo;
 bool InjectDLL(HANDLE hProcess, const char* dllPath) {
   // 获取LoadLibraryA的地址
   LPVOID pLoadLibrary =

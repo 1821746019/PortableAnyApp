@@ -6,16 +6,21 @@ import std;
 import Hooker;
 import func2hook;
 import func2hook.kernel;
+import func2hook.kernel.raw;
+import ConfigMgr;
+import selfInfo;
+import RegHandlerMgr;
+using namespace std;
 void setHook() {
   //{&RtlInitUnicodeString_raw, &RtlInitUnicodeString_mod},
   //{&RtlInitUnicodeStringEx_raw, &RtlInitUnicodeStringEx_mod},
   DetoursHooker hooker;
-   hooker.endeque({
+  // hooker.endeque({
 
-      {&NtOpenKey_raw, &NtOpenKey_mod},
-      {&NtOpenKeyEx_raw, &NtOpenKeyEx_mod},
-      {&NtCreateKey_raw, &NtCreateKey_mod},
-  });
+  //    {&NtOpenKey_raw, &NtOpenKey_mod},
+  //    {&NtOpenKeyEx_raw, &NtOpenKeyEx_mod},
+  //    {&NtCreateKey_raw, &NtCreateKey_mod},
+  //});
 
   hooker.endeque({
       //{&BaseRegCreateKey_raw, &BaseRegCreateKey_mod},
@@ -36,7 +41,7 @@ void setHook() {
       //{&RegCreateKeyExW_raw, &RegCreateKeyExW_mod},
       //{&RegCreateKeyExA_raw, &RegCreateKeyExA_mod},
   });
-   auto i = RegEnumKeyExW_raw;
+  auto i = RegEnumKeyExW_raw;
   hooker.setHook();
   // NtOpenKey(nullptr, 0, nullptr);
 }
@@ -46,6 +51,8 @@ extern "C" __declspec(dllexport) BOOL DllMain(HMODULE hModule,
                                               LPVOID lpReserved) {
   if (dwReason == DLL_PROCESS_ATTACH) {
     DisableThreadLibraryCalls(hModule);
+    ConfigMgr::_ins_(selfDir() / (std::string(BS_TARGET_NAME) + ".toml"));
+    RegHandlerMgr::_ins_();
     setHook();
   }
   return TRUE;

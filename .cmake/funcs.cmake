@@ -193,6 +193,8 @@ function(bs_add_lib name)
     bs_get_files_paths(file_list ${patterns})
     bs_split_srcs(ixx_list cpp_list ${file_list})
     add_library(${name} ${lib_type}  "${cpp_list}" )
+    #添加BS_TARGET_NAME宏
+    target_compile_definitions(${name} PRIVATE BS_TARGET_NAME="${name}")
     # if( ixx_list)
         # set(abs_ixx_list "")
         # foreach(ixx ${ixx_list})
@@ -239,7 +241,8 @@ function(bs_add_exe name)
     bs_get_files_paths(file_list ${patterns})
     bs_split_srcs(ixx_list cpp_list ${file_list})
     add_executable(${name} ${exe_type} ${cpp_list} ${ixx_list})
-    
+    #添加BS_TARGET_NAME宏
+    target_compile_definitions(${name} PRIVATE BS_TARGET_NAME="${name}")
     if( ixx_list )
         #寻找最长的baseDir
         set(abs_ixx_list "")

@@ -12,8 +12,8 @@ export class ConfigMgr {
   VarInterpolationMgr* macro_mgr_;
 
   FsConfig fs_config_;
-  static std::string preprocConfig(const std::wstring& config_path) {
-    std::ifstream ifs(config_path);
+  static std::string preprocConfig(const std::wstring& content) {
+    std::ifstream ifs(content);
     if (!ifs) {
       throw std::runtime_error("failed to open file");
     }

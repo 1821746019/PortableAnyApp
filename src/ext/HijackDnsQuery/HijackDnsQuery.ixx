@@ -9,7 +9,7 @@ module;
 export module HijackDnsQuery;
 import std;
 import Hooker;
-import selfDir;
+import selfInfo;
 using namespace std;
 namespace fs = filesystem;
 

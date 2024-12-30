@@ -6,7 +6,7 @@
 export module _;
 import std;
  //import std.compat;
-import selfDir;
+import selfInfo;
 
 using namespace std;
 namespace fs = filesystem;
