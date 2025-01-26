@@ -28,7 +28,7 @@ void setHook() {
       {&RegQueryInfoKeyA_raw, &RegQueryInfoKeyA_mod},
       {&RegEnumKeyExW_raw, &RegEnumKeyExW_mod},
       {&RegEnumKeyExA_raw, &RegEnumKeyExA_mod},
-      /*尚未清除是否要hook，其内部实现未发现调用kernel层的函数而是直接调了nt层的NtQueryValueKey
+      /*尚不清楚是否要hook，其内部实现未发现调用kernel层的函数而是直接调了nt层的NtQueryValueKey
        * 应该是和前面QueryInfo、EnumKey一样，要对根键(比如HKEY_LOCAL_MACHINE)Query或者Enum时才需要hook，
        * 实测无需hook能正常获取SOFTWARE\Microsoft\Cryptography\MachineGuid的值
        */
@@ -38,8 +38,14 @@ void setHook() {
       {&RegOpenKeyExA_raw, &RegOpenKeyExA_mod},
       {&RegCreateKeyExInternalW_raw, &RegCreateKeyExInternalW_mod},
       {&RegCreateKeyExInternalA_raw, &RegCreateKeyExInternalA_mod},
-      //{&RegCreateKeyExW_raw, &RegCreateKeyExW_mod},
-      //{&RegCreateKeyExA_raw, &RegCreateKeyExA_mod},
+      //
+      {&RegEnumValueW_raw, &RegEnumValueW_mod},
+      {&RegEnumValueA_raw,
+       &RegEnumValueA_mod},  // 莫非就是导致bug的原因, 之前用了W
+      {&RegQueryValueExW_raw, &RegQueryValueExW_mod},
+      {&RegQueryValueExA_raw, &RegQueryValueExA_mod},
+      //{&RegSetValueExW_raw, &RegSetValueExW_mod},
+      //{&RegSetValueExA_raw, &RegSetValueExA_mod},
   });
   auto i = RegEnumKeyExW_raw;
   hooker.setHook();

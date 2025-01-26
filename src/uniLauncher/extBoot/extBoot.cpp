@@ -163,13 +163,14 @@ void loadExtDll() {
         fs::exists(currDir / "App") && fs::is_directory(currDir / "App");
     if (isInHome) {
       // 停止查找
-      logger.warn(format("{} not found in the ancestor dir of the {}",
+      logger().warn(format("{} not found in the ancestor dir of the {}",
                          ExtDirName, currDir.string()));
     }
     currDir = currDir.parent_path();  // 找不到就回退一级目录
   }
 
   for (auto& e : fs::recursive_directory_iterator(ExtDir)) {
+    // _开头的dll或其所在的目录为_开头则不加载
     if (e.is_regular_file() && e.path().extension() == ".dll" &&
         !e.path().filename().string().starts_with("_") &&
         !e.path().parent_path().filename().wstring().starts_with(L"_")) {

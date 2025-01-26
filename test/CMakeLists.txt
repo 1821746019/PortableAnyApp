@@ -1,4 +1,4 @@
-﻿
+﻿link_libraries(ntdll.lib)
 add_executable(dll_test "version_dll_test.cpp")
 target_link_libraries(dll_test "version")
 
@@ -34,3 +34,6 @@ target_link_libraries(${exe_name} PRIVATE RegCore)
 set(exe_name RegParser)
 
 bs_add_exe(${exe_name} RegParser.ixx)
+
+set(exe_name NtReg)
+bs_add_exe(${exe_name} NtReg.ixx)

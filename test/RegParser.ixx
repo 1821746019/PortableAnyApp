@@ -1,4 +1,4 @@
-module;
+ï»¿module;
 #include <Windows.h>
 
 export module RegParser;
@@ -29,58 +29,58 @@ HKEY getAppHiveRootKey() {
 };
 extern "C" int main() {
   try {
-    // 1. »ñÈ¡ AppHive ¾ä±ú
+    // 1. è·å– AppHive å¥æŸ„
     HKEY hAppHive = getAppHiveRootKey();
     HKEY hMachine = nullptr;
-    // 2. ²âÊÔ´´½¨Ò»¸öÃûÎª "TestKey" µÄ×Ó¼ü
+    // 2. æµ‹è¯•åˆ›å»ºä¸€ä¸ªåä¸º "TestKey" çš„å­é”®
     LONG rootStatus = RegCreateKeyExW(hAppHive,
-                                  L"HKEY_LOCAL_MACHINE",  // ×Ó¼üÃû³Æ
-                                  0,           // ±£Áô£¬Ò»°ãÌî0
-                                  nullptr,     // ÀàÃû£¨¿ÉÌî¿Õ£©
-                                  REG_OPTION_NON_VOLATILE,  // ·ÇÒ×Ê§ĞÔ
-                                  KEY_ALL_ACCESS,  // È«È¨ÏŞ£¬·½±ã¶ÁĞ´
-                                  nullptr,         // °²È«ÊôĞÔ
-                                      &hMachine,  // ·µ»Ø´´½¨ºÃµÄ×Ó¼ü
-                                  nullptr          // ²»¹ØĞÄÊÇ·ñÒÑ´æÔÚ
+                                  L"HKEY_LOCAL_MACHINE",  // å­é”®åç§°
+                                  0,           // ä¿ç•™ï¼Œä¸€èˆ¬å¡«0
+                                  nullptr,     // ç±»åï¼ˆå¯å¡«ç©ºï¼‰
+                                  REG_OPTION_NON_VOLATILE,  // éæ˜“å¤±æ€§
+                                  KEY_ALL_ACCESS,  // å…¨æƒé™ï¼Œæ–¹ä¾¿è¯»å†™
+                                  nullptr,         // å®‰å…¨å±æ€§
+                                      &hMachine,  // è¿”å›åˆ›å»ºå¥½çš„å­é”®
+                                  nullptr          // ä¸å…³å¿ƒæ˜¯å¦å·²å­˜åœ¨
     );
     HKEY hTestKey = nullptr;
     LONG status = RegCreateKeyExW(hMachine,
-                             L"Software\\SogouInput",            // ×Ó¼üÃû³Æ
-                             0,                        // ±£Áô£¬Ò»°ãÌî0
-                             nullptr,                  // ÀàÃû£¨¿ÉÌî¿Õ£©
-                             REG_OPTION_NON_VOLATILE,  // ·ÇÒ×Ê§ĞÔ
-                             KEY_ALL_ACCESS,  // È«È¨ÏŞ£¬·½±ã¶ÁĞ´
-                             nullptr,         // °²È«ÊôĞÔ
-                             &hTestKey,       // ·µ»Ø´´½¨ºÃµÄ×Ó¼ü
-                             nullptr          // ²»¹ØĞÄÊÇ·ñÒÑ´æÔÚ
+                             L"Software\\SogouInput",            // å­é”®åç§°
+                             0,                        // ä¿ç•™ï¼Œä¸€èˆ¬å¡«0
+                             nullptr,                  // ç±»åï¼ˆå¯å¡«ç©ºï¼‰
+                             REG_OPTION_NON_VOLATILE,  // éæ˜“å¤±æ€§
+                             KEY_ALL_ACCESS,  // å…¨æƒé™ï¼Œæ–¹ä¾¿è¯»å†™
+                             nullptr,         // å®‰å…¨å±æ€§
+                             &hTestKey,       // è¿”å›åˆ›å»ºå¥½çš„å­é”®
+                             nullptr          // ä¸å…³å¿ƒæ˜¯å¦å·²å­˜åœ¨
     );
     if (status != ERROR_SUCCESS) {
-      throw std::runtime_error("RegCreateKeyExW ´´½¨¼üÊ§°Ü£¬Çë¼ì²éÈ¨ÏŞ¡£");
+      throw std::runtime_error("RegCreateKeyExW åˆ›å»ºé”®å¤±è´¥ï¼Œè¯·æ£€æŸ¥æƒé™ã€‚");
     }
 
-    // 3. ÍùÕâ¸ö×Ó¼üĞ´ÈëÒ»¸ö¼òµ¥×Ö·û´®Öµ×öÑéÖ¤
+    // 3. å¾€è¿™ä¸ªå­é”®å†™å…¥ä¸€ä¸ªç®€å•å­—ç¬¦ä¸²å€¼åšéªŒè¯
     const wchar_t* data = L"Hello from AppHive";
     status = RegSetValueExW(
         hTestKey,
-        L"MyValue",  // ÖµÃû³Æ
-        0,           // ±£Áô
-        REG_SZ,      // ×Ö·û´®ÀàĞÍ
+        L"MyValue",  // å€¼åç§°
+        0,           // ä¿ç•™
+        REG_SZ,      // å­—ç¬¦ä¸²ç±»å‹
         reinterpret_cast<const BYTE*>(data),
         static_cast<DWORD>((wcslen(data) + 1) * sizeof(wchar_t)));
 
     if (status != ERROR_SUCCESS) {
       RegCloseKey(hTestKey);
-      throw std::runtime_error("RegSetValueExW Ğ´ÖµÊ§°Ü£¬Çë¼ì²éÈ¨ÏŞ¡£");
+      throw std::runtime_error("RegSetValueExW å†™å€¼å¤±è´¥ï¼Œè¯·æ£€æŸ¥æƒé™ã€‚");
     }
 
-    // 4. ÇåÀí¾ä±ú
+    // 4. æ¸…ç†å¥æŸ„
     RegCloseKey(hTestKey);
 
-    std::cout << "²âÊÔ³É¹¦£¬AppHive ¿ÉĞ´£¡" << std::endl;
-    return 0;  // ±íÊ¾³É¹¦
+    std::cout << "æµ‹è¯•æˆåŠŸï¼ŒAppHive å¯å†™ï¼" << std::endl;
+    return 0;  // è¡¨ç¤ºæˆåŠŸ
 
   } catch (const std::exception& ex) {
-    std::cerr << "²âÊÔÊ§°Ü: " << ex.what() << std::endl;
-    return 1;  // ±íÊ¾Ê§°Ü
+    std::cerr << "æµ‹è¯•å¤±è´¥: " << ex.what() << std::endl;
+    return 1;  // è¡¨ç¤ºå¤±è´¥
   }
 }

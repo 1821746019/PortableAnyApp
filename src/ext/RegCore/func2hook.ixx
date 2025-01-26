@@ -6,9 +6,8 @@ import std;
 import AppRegHive;
 import my_converter.str;
 import log;
-constexpr wchar_t REG_PREFIX[] = LR"(\REGISTRY)";
+import reg_common;
 
-constexpr int REG_PREFIX_LEN = std::size(REG_PREFIX);
 // 前缀不是\REGISTRY, 不作重定向
 #define redirectIt                                                          \
   wchar_t path[int(MAX_PATH * 1.5)];                                        \
@@ -22,23 +21,6 @@ constexpr int REG_PREFIX_LEN = std::size(REG_PREFIX);
   OA_new.ObjectName->MaximumLength = OA_new.ObjectName->Length
 
 export {
-  error_status_t __fastcall BaseRegCreateKey(
-      HKEY hKey,
-      // 对应 a1，RPC 句柄
-      LPWSTR lpSubKey,
-      // 对应 a2，子键名的 UNICODE_STRING 指针
-      LPWSTR lpClass,
-      // 对应 a3，类名的 UNICODE_STRING 指针
-      ULONG dwOptions,
-      // 对应 a4，选项标志
-      REGSAM samDesired,
-      // 对应 a5，访问权限掩码
-      PSECURITY_ATTRIBUTES lpSecurityAttributes,
-      // 对应 a6，安全属性指针
-      PHKEY phkResult,
-      // 对应 a7，返回创建/打开的键句柄指针
-      PULONG lpdwDisposition  // 对应 a8，返回操作结果指针（如是新建还是已存在）
-  );
 
   decltype(&NtOpenKey) NtOpenKey_raw = &NtOpenKey;
   auto NTAPI NtOpenKey_mod(PHANDLE KeyHandle, ACCESS_MASK DesiredAccess,
@@ -94,6 +76,27 @@ export {
     if (status != STATUS_SUCCESS) {
       status = NtCreateKey_raw(KeyHandle, DesiredAccess, ObjectAttributes,
                                TitleIndex, Class, CreateOptions, Disposition);
+    }
+    return status;
+  }
+  auto NtQueryValueKey_raw = &NtQueryValueKey;
+
+          auto NTAPI NtQueryValueKey_mod(
+      HANDLE KeyHandle, PUNICODE_STRING ValueName,
+      KEY_VALUE_INFORMATION_CLASS KeyValueInformationClass,
+      PVOID KeyValueInformation, ULONG Length, PULONG ResultLength) {
+    if (!ValueName->Buffer ||
+        _wcsnicmp(REG_PREFIX, ValueName->Buffer, REG_PREFIX_LEN) != 0)
+      return NtQueryValueKey_raw(KeyHandle, ValueName, KeyValueInformationClass,
+                                 KeyValueInformation, Length, ResultLength);
+    //redirectIt;
+    NTSTATUS status =
+        NtQueryValueKey_raw(KeyHandle, ValueName, KeyValueInformationClass,
+                            KeyValueInformation, Length, ResultLength);
+    if (status != STATUS_SUCCESS) {
+      status =
+          NtQueryValueKey_raw(KeyHandle, ValueName, KeyValueInformationClass,
+                              KeyValueInformation, Length, ResultLength);
     }
     return status;
   }

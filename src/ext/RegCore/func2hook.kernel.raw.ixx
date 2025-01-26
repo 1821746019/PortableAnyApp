@@ -49,4 +49,12 @@ export {
       GetModuleHandleA("kernelbase.dll"), "RegEnumKeyExW");
   auto RegEnumKeyExA_raw = (decltype(&RegEnumKeyExA))GetProcAddress(
       GetModuleHandleA("kernelbase.dll"), "RegEnumKeyExA");
+  auto RegEnumValueW_raw = (decltype(&RegEnumValueW))GetProcAddress(
+      GetModuleHandleA("kernelbase.dll"), "RegEnumValueW");
+  auto RegEnumValueA_raw = (decltype(&RegEnumValueA))GetProcAddress(
+      GetModuleHandleA("kernelbase.dll"), "RegEnumValueA");
+  auto RegSetValueExW_raw = (decltype(&RegSetValueExW))GetProcAddress(
+      GetModuleHandleA("kernelbase.dll"), "RegSetValueExW");
+  auto RegSetValueExA_raw = (decltype(&RegSetValueExA))GetProcAddress(
+      GetModuleHandleA("kernelbase.dll"), "RegSetValueExA");
 }

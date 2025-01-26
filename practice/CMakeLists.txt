@@ -59,7 +59,9 @@ foreach(e ${extList})
     )
 endforeach()
 
-set(currTarget "uToolsPractice")
+set(currTarget "_uToolsPractice")
+set(dstExePath [[D:\Program\Productivity\Utils\uTools_4.4.1_Portable\App\uTools.exe]])
+set(args [[--portable --user-data-dir="D:\Program\Productivity\Utils\uTools_4.4.1_Portable\Data\user_data"]])
 bs_add_lib(${currTarget} SHARED _.cpp)
 set(extList RegCore)
 set(depList extBoot ${extList})
@@ -77,6 +79,12 @@ foreach(e ${extList})
 
     )
 endforeach()
+# update the launch.vs.json
+update_launch_vs_json(${currTarget} ${dstExePath}
+    ARGS ${args}
+)
+
+
 
 set(currTarget "PixpinPractice")
 set(appHomeDir "D:/Program/Productivity/Utils/PixPin/v1.9.5")

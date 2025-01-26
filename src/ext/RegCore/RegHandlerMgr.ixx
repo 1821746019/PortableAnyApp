@@ -4,7 +4,7 @@ export module RegHandlerMgr;
 
 import std;
 import ConfigMgr;
-import RegHandler_I;
+import RegHandler_B;
 import RegHandler_Virtual;
 import RegHandler_Patch;
 export class RegHandlerMgr {
@@ -12,7 +12,7 @@ export class RegHandlerMgr {
  private:
   RegHandlerMgr() {
     std::unordered_map<ConfigMgr::RegModeEnum,
-                       std::function<std::unique_ptr<RegHandler_I>()>>
+                       std::function<std::unique_ptr<RegHandler_B>()>>
         map{{ConfigMgr::Patch, std::make_unique<RegHandler_Patch>},
             {ConfigMgr::Virtual, std::make_unique<RegHandler_Virtual>}};
     RegHandler_ = map[ConfigMgr::_ins_().RegMode()]();
@@ -27,10 +27,10 @@ export class RegHandlerMgr {
 
     return regHandlerMgr;
   }
-  std::unique_ptr<RegHandler_I> RegHandler_{nullptr};
+  std::unique_ptr<RegHandler_B> RegHandler_{nullptr};
 
  public:
-  RegHandler_I& RegHandler() const { return *RegHandler_; }
+  RegHandler_B& RegHandler() const { return *RegHandler_; }
   static RegHandlerMgr& _reinit_() {
     ins_ = createIns();
     return *ins_.get();
