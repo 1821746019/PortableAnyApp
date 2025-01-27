@@ -11,16 +11,10 @@ struct KeyHash {
 struct KeyEqual {
   bool operator()(const Key* lhs, const Key* rhs) const;
 };
-// 大小写不敏感的比较器
-struct CaseInsensitiveCompare {
-  bool operator()(const Key* lhs, const Key* rhs) const;
-
-  static bool caseInsensitiveLess(const std::wstring& lhs, const std::wstring& rhs);
-};
 struct KeyInfo {
   std::unique_ptr<std::wstring> redirect;
   uint32_t permissions = 7;
-  std::set<Key*, CaseInsensitiveCompare> subKeys;
+  std::unordered_set<Key*, KeyHash,KeyEqual> subKeys;
 };
 struct Key {
   std::wstring name;
@@ -36,15 +30,13 @@ bool KeyEqual::operator()(const Key* lhs, const Key* rhs) const {
   return lhs->name == rhs->name;  // 只比较 name
 }
 
-bool CaseInsensitiveCompare::operator()(const Key* lhs, const Key* rhs) const {
-  // 比较 Key 的 name 成员，忽略大小写
-  return caseInsensitiveLess(lhs->name, rhs->name);
-}
-
-bool CaseInsensitiveCompare::caseInsensitiveLess(const std::wstring& lhs, const std::wstring& rhs) {
-  return std::ranges::lexicographical_compare(lhs, rhs, [](wchar_t a, wchar_t b) {
-    return towlower(a) < towlower(b);
-  });
+wchar_t* tolower(wchar_t str[]) {
+  if (!str)
+    return nullptr;
+  for (wchar_t* p = str; *p; ++p) {
+    *p = towlower(*p);
+  }
+  return str;
 }
 
 export class GuardConfig {
@@ -73,10 +65,11 @@ export class GuardConfig {
   }
   Key* create(std::wstring path) {
     if (!root_)
-      root_ = new Key{L"", std::make_unique<KeyInfo>(nullptr, 7, std::set<Key*, CaseInsensitiveCompare>{})};
+      root_ =
+          new Key{L"", std::make_unique<KeyInfo>(nullptr, 7, std::unordered_set<Key*, KeyHash, KeyEqual>{})};
     Key* currKey = root_;
     wchar_t* context = nullptr;
-    wchar_t* tok = wcstok_s(path.data(), L"\\", &context);
+    wchar_t* tok = tolower(wcstok_s(path.data(), L"\\", &context));
     while (tok != nullptr) {
       auto& subKeys = currKey->keyInfo->subKeys;
       Key tmp(tok, nullptr);
@@ -84,14 +77,14 @@ export class GuardConfig {
       auto it = subKeys.find(&tmp);
       if (it == subKeys.end()) {
         subKeys.emplace(
-            new Key(tok, std::make_unique<KeyInfo>(nullptr, 7, std::set<Key*, CaseInsensitiveCompare>{}))
+            new Key(tok, std::make_unique<KeyInfo>(nullptr, 7, std::unordered_set<Key*, KeyHash, KeyEqual>{}))
         );
       }
 
       currKey = *subKeys.find(&tmp);
       if (!currKey)
         return currKey;
-      tok = wcstok_s(nullptr, L"\\", &context);
+      tok = tolower(wcstok_s(nullptr, L"\\", &context));
     }
     return currKey;
   }
@@ -100,7 +93,7 @@ export class GuardConfig {
     // if (root_ == nullptr) {throw runtime_error("PseudoHive: root is null");}
     Key* currKey = root_;
     wchar_t* context = nullptr;
-    wchar_t* tok = wcstok_s(path.data(), L"\\", &context);
+    wchar_t* tok = tolower(wcstok_s(path.data(), L"\\", &context));
     while (tok != nullptr) {
       auto& subKeys = currKey->keyInfo->subKeys;
       if (keyContext)
@@ -111,7 +104,7 @@ export class GuardConfig {
       currKey = it != subKeys.end() ? *it : nullptr;
       if (!currKey)
         return currKey;
-      tok = wcstok_s(nullptr, L"\\", &context);
+      tok = tolower(wcstok_s(nullptr, L"\\", &context));
     }
     return currKey;
     // strtok_s()
