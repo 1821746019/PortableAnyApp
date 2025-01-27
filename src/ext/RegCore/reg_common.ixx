@@ -1,4 +1,4 @@
-module;
+﻿module;
 #include <ntdll.h>
 
 export module reg_common;
@@ -12,36 +12,35 @@ export {
   constexpr int REG_PREFIX_LEN = std::size(REG_PREFIX) - 1;
 
   std::wstring GetKeyPath(HKEY hKey) {
-    std::unordered_map<HKEY, std::wstring> excluded(
-        {{HKEY_LOCAL_MACHINE, L"HKEY_LOCAL_MACHINE"},
-         {HKEY_CURRENT_USER, L"HKEY_CURRENT_USER"},
-         {HKEY_USERS, L"HKEY_USERS"},
-         {HKEY_CLASSES_ROOT, L"HKEY_CLASSES_ROOT"},
-         {HKEY_CURRENT_CONFIG, L"HKEY_CURRENT_CONFIG"}});
+    std::unordered_map<HKEY, std::wstring> excluded({
+        {HKEY_LOCAL_MACHINE, L"HKEY_LOCAL_MACHINE"},
+        {HKEY_CURRENT_USER, L"HKEY_CURRENT_USER"},
+        {HKEY_USERS, L"HKEY_USERS"},
+        {HKEY_CLASSES_ROOT, L"HKEY_CLASSES_ROOT"},
+        {HKEY_CURRENT_CONFIG, L"HKEY_CURRENT_CONFIG"},
+    });
     if (excluded.contains(hKey)) {
       return excluded.at(hKey);
     };
-    // ��ʼ��������С
+    // 初始缓冲区大小
     ULONG bufferSize = 0;
     NtQueryKey(hKey, KeyNameInformation, nullptr, 0, &bufferSize);
     if (bufferSize == 0) {
-      throw std::runtime_error("NtQueryKey ʧ�ܡ�\n");
+      throw std::runtime_error("NtQueryKey 失败。\n");
     }
 
-    // ʹ��std::unique_ptr����������
+    // 使用std::unique_ptr管理缓冲区
     std::unique_ptr<UINT8[]> buffer(new UINT8[bufferSize]);
     if (!buffer) {
-      throw std::runtime_error("�ڴ����ʧ�ܡ�\n");
+      throw std::runtime_error("内存分配失败。\n");
     }
 
-    NTSTATUS status = NtQueryKey(hKey, KeyNameInformation, buffer.get(),
-                                 bufferSize, &bufferSize);
+    NTSTATUS status = NtQueryKey(hKey, KeyNameInformation, buffer.get(), bufferSize, &bufferSize);
     if (status == 0) {  // STATUS_SUCCESS
       PKEY_NAME_INFORMATION keyNameInfo = (PKEY_NAME_INFORMATION)(buffer.get());
       return std::wstring(keyNameInfo->Name, keyNameInfo->NameLength / 2);
     } else {
-      throw std::runtime_error(
-          std::format("NtQueryKey ʧ�ܣ�״̬��: 0x%X\n", status));
+      throw std::runtime_error(std::format("NtQueryKey 失败，状态码: 0x%X\n", status));
     }
   }
   std::unique_ptr<wchar_t[]> strConvert(const char* str, size_t bufSize = -1) {
@@ -66,13 +65,26 @@ export {
   std::string WideToAnsi(const std::wstring& wstr) {
     if (wstr.empty())
       return std::string();
-    int needed =
-        WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, NULL, 0, NULL, NULL);
+    int needed = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, NULL, 0, NULL, NULL);
     if (needed <= 0)
       return std::string();
     std::string str(needed - 1, '\0');
-    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, &str[0], needed, NULL,
-                        NULL);
+    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, &str[0], needed, NULL, NULL);
     return str;
+  }
+  // e.用于把形如 "MACHINE\\..." 替换为 "HKEY_LOCAL_MACHINE\\..."
+  std::wstring abstractNonRootFromAbsRegPath(const std::wstring_view& src) {
+    if (!src.starts_with(REG_PREFIX))
+      return src.data();
+    std::wstring NoAbsPrefix(src.data() + REG_PREFIX_LEN);
+    // 判断并替换前缀
+    if (NoAbsPrefix.starts_with(L"MACHINE\\")) {
+      return L"HKEY_LOCAL_MACHINE\\" + NoAbsPrefix.substr(8);  // 去掉 "MACHINE\" (长度8)
+    } else if (NoAbsPrefix.starts_with(L"USER\\")) {
+      return L"HKEY_CURRENT_USER\\" + NoAbsPrefix.substr(5);  // 去掉 "USER\" (长度5)
+    }
+
+    // 如果既不是 MACHINE\ 也不是 USER\，直接返回
+    return NoAbsPrefix;
   }
 }

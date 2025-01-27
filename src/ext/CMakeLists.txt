@@ -65,7 +65,7 @@ add_custom_command(TARGET ${curr_target} POST_BUILD
 
 set(curr_target  RegCore)
 #bs_add_lib(${curr_target} SHARED *.ixx)
-target_link_libraries(${curr_target} PRIVATE ntdll advapi32Forged advapi32
+target_link_libraries(${curr_target} PRIVATE ntdll  advapi32 #advapi32Forged
 kernel32
 crypt32
 bcrypt

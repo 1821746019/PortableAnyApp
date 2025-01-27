@@ -1,0 +1,6 @@
+command script import ./skip_std.py
+
+# 设置一个 stop hook，每次停下来就自动执行 skip_in_std
+# 可以视需求设置
+breakpoint set --one-shot false --auto-continue false
+target stop-hook add -o "skip_in_std"

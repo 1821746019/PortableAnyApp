@@ -2,4 +2,4 @@
 AlignAfterOpenBracket: BlockIndent   # 如果你希望函数名后的“(”换行后，每个参数左侧都缩进一个级别（而不是与“(”对齐），可以用 BlockIndent。若想让它们与第一个参数对齐，可以用 Align(Default)，如果完全不要对齐，可以用 DontAlign。
 #AllowShortFunctionsOnASingleLine: None # 禁止单行函数
 SortIncludes: Never
-ColumnLimit: 115  # 设置hardwrap的wordNum为100
+ColumnLimit: 110  # 设置hardwrap的wordNum为100

@@ -45,7 +45,7 @@ export {
         LPDWORD lpcbSecurityDescriptor,
         PFILETIME lpftLastWriteTime
     ) {
-      return RegQueryInfoKeyW(
+      return RegQueryInfoKeyW_raw(
           hKey, lpClass, lpcClass, lpReserved, lpcSubKeys, lpcMaxSubKeyLen, lpcMaxClassLen, lpcValues,
           lpcMaxValueNameLen, lpcMaxValueLen, lpcbSecurityDescriptor, lpftLastWriteTime
       );
@@ -58,7 +58,7 @@ export {
         LPBYTE lpData,
         LPDWORD lpcbData
     ) {
-      return RegQueryValueExW(hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
+      return RegQueryValueExW_raw(hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
     }
     virtual LSTATUS RegEnumKeyExW(
         HKEY hKey,
@@ -70,7 +70,7 @@ export {
         LPDWORD lpcClass,
         PFILETIME lpftLastWriteTime
     ) {
-      return RegEnumKeyExW(hKey, dwIndex, lpName, lpcName, lpReserved, lpClass, lpcClass, lpftLastWriteTime);
+      return RegEnumKeyExW_raw(hKey, dwIndex, lpName, lpcName, lpReserved, lpClass, lpcClass, lpftLastWriteTime);
     }
     virtual LSTATUS RegEnumValueW(
         HKEY hkey,
@@ -82,7 +82,7 @@ export {
         LPBYTE lpData,
         LPDWORD lpcbData
     ) {
-      return RegEnumValueW(hkey, dwIndex, lpValueName, lpcchValueName, lpReserved, lpType, lpData, lpcbData);
+      return RegEnumValueW_raw(hkey, dwIndex, lpValueName, lpcchValueName, lpReserved, lpType, lpData, lpcbData);
     }
     virtual LSTATUS RegSetValueExW(
         HKEY hKey,
@@ -92,7 +92,7 @@ export {
         const BYTE* lpData,
         DWORD cbData
     ) {
-      return RegSetValueExW(hKey, lpValueName, Reserved, dwType, lpData, cbData);
+      return RegSetValueExW_raw(hKey, lpValueName, Reserved, dwType, lpData, cbData);
     }
   };
 }

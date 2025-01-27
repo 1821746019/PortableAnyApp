@@ -37,3 +37,13 @@ bs_add_exe(${exe_name} RegParser.ixx)
 
 set(exe_name NtReg)
 bs_add_exe(${exe_name} NtReg.ixx)
+
+
+
+
+file(GLOB srcFiles "SingleToExe/*.ixx")
+
+foreach(e ${srcFiles})
+		get_filename_component(exe_name ${e} NAME_WLE)
+		bs_add_exe(${exe_name} ${e})
+endforeach()

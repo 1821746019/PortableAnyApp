@@ -8,21 +8,7 @@ import func2hook.kernel.raw;
 import AppRegHive;
 import reg_common;
 
-// 你原先的工具函数，用于把形如 "MACHINE\\..." 替换为 "HKEY_LOCAL_MACHINE\\..."
-std::wstring abstractNonRootFromAbsRegPath(const std::wstring_view& src) {
-  if (!src.starts_with(REG_PREFIX))
-    return src.data();
-  std::wstring NoAbsPrefix(src.data() + REG_PREFIX_LEN);
-  // 判断并替换前缀
-  if (NoAbsPrefix.starts_with(L"MACHINE\\")) {
-    return L"HKEY_LOCAL_MACHINE\\" + NoAbsPrefix.substr(8);  // 去掉 "MACHINE\" (长度8)
-  } else if (NoAbsPrefix.starts_with(L"USER\\")) {
-    return L"HKEY_CURRENT_USER\\" + NoAbsPrefix.substr(5);  // 去掉 "USER\" (长度5)
-  }
 
-  // 如果既不是 MACHINE\ 也不是 USER\，直接返回
-  return NoAbsPrefix;
-}
 export class RegHandler_Patch : public RegHandler_B {
  public:
   //--------------------------------------------------------------------------------
@@ -43,8 +29,8 @@ export class RegHandler_Patch : public RegHandler_B {
   ) override {
     // 直接调用底层 raw
     LSTATUS status = RegCreateKeyExInternalW_raw(
-        hKey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult, lpdwDisposition,
-        lpReserved
+        hKey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult,
+        lpdwDisposition, lpReserved
     );
     return status;
   }
@@ -90,8 +76,8 @@ export class RegHandler_Patch : public RegHandler_B {
     if (status == ERROR_SUCCESS) {
       // 在虚拟子键上调用 QueryInfoKey
       status = RegQueryInfoKeyW_raw(
-          hVirtualSubKey, lpClass, lpcClass, lpReserved, lpcSubKeys, lpcMaxSubKeyLen, lpcMaxClassLen, lpcValues,
-          lpcMaxValueNameLen, lpcMaxValueLen, lpcbSecurityDescriptor, lpftLastWriteTime
+          hVirtualSubKey, lpClass, lpcClass, lpReserved, lpcSubKeys, lpcMaxSubKeyLen, lpcMaxClassLen,
+          lpcValues, lpcMaxValueNameLen, lpcMaxValueLen, lpcbSecurityDescriptor, lpftLastWriteTime
       );
       RegCloseKey(hVirtualSubKey);
 
@@ -162,7 +148,8 @@ export class RegHandler_Patch : public RegHandler_B {
     if (patchEndIndex == (DWORD)-1) {
       // try to query from the AppRegHive first by opening the subkey
       HKEY hVirtualSubKey = nullptr;
-      LSTATUS statusOpen = RegOpenKeyExW_raw(getAppHiveRootKey(), path_old.c_str(), 0, KEY_READ, &hVirtualSubKey);
+      LSTATUS statusOpen =
+          RegOpenKeyExW_raw(getAppHiveRootKey(), path_old.c_str(), 0, KEY_READ, &hVirtualSubKey);
 
       if (statusOpen == ERROR_SUCCESS) {
         // 在虚拟子键上枚举 dwIndex
@@ -219,7 +206,8 @@ export class RegHandler_Patch : public RegHandler_B {
     if (patchEndIndex == (DWORD)-1) {
       // 先尝试枚举虚拟表
       HKEY hVirtualSubKey = nullptr;
-      LSTATUS statusOpen = RegOpenKeyExW_raw(getAppHiveRootKey(), path_old.c_str(), 0, KEY_READ, &hVirtualSubKey);
+      LSTATUS statusOpen =
+          RegOpenKeyExW_raw(getAppHiveRootKey(), path_old.c_str(), 0, KEY_READ, &hVirtualSubKey);
 
       if (statusOpen == ERROR_SUCCESS) {
         LSTATUS statusEnum = RegEnumValueW_raw(
@@ -253,8 +241,14 @@ export class RegHandler_Patch : public RegHandler_B {
   // RegSetValueExW
   //--------------------------------------------------------------------------------
   LSTATUS
-  RegSetValueExW(HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE* lpData, DWORD cbData)
-      override {
+  RegSetValueExW(
+      HKEY hKey,
+      LPCWSTR lpValueName,
+      DWORD Reserved,
+      DWORD dwType,
+      const BYTE* lpData,
+      DWORD cbData
+  ) override {
     // 获取非根注册表路径
     std::wstring path_old = abstractNonRootFromAbsRegPath(GetKeyPath(hKey));
 

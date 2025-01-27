@@ -1,4 +1,4 @@
-module;
+ï»¿module;
 #include <Windows.h>
 export module func2hook.kernel;
 import std;
@@ -11,100 +11,97 @@ import reg_common;
 #define regHandle RegHandlerMgr::_ins_().RegHandler()
 
 std::string WideMultiSzToAnsiMultiSz(const wchar_t* wMultiSz, size_t cchW) {
-  // wMultiSz: ¿í×Ö·û»º³å
-  // cchW: ¿í×Ö·û¸öÊı(°üº¬×îºóµÄË«'\0'Âğ£¿¿É¸ù¾İÊµ¼ÊÇé¿ö´«Èë)
+  // wMultiSz: å®½å­—ç¬¦ç¼“å†²
+  // cchW: å®½å­—ç¬¦ä¸ªæ•°(åŒ…å«æœ€åçš„åŒ'\0'å—ï¼Ÿå¯æ ¹æ®å®é™…æƒ…å†µä¼ å…¥)
 
   std::string result;
   if (!wMultiSz || cchW == 0)
     return result;
 
-  // ±éÀúÃ¿¸ö×Ó´®
+  // éå†æ¯ä¸ªå­ä¸²
   const wchar_t* pCur = wMultiSz;
   while (*pCur) {
-    // °Ñµ±Ç°×Ó´®×ª ANSI
+    // æŠŠå½“å‰å­ä¸²è½¬ ANSI
     std::string ansi = WideToAnsi(pCur);
-    // ×·¼Óµ½result£¬Ìí¼ÓÒ»¸ö '\0' ·Ö¸ô
+    // è¿½åŠ åˆ°resultï¼Œæ·»åŠ ä¸€ä¸ª '\0' åˆ†éš”
     result.append(ansi.c_str(), ansi.size());
     result.push_back('\0');
 
-    // Ìøµ½ÏÂÒ»¸ö×Ó´®(ÒÔ L'\0' Îª½áÊø)
+    // è·³åˆ°ä¸‹ä¸€ä¸ªå­ä¸²(ä»¥ L'\0' ä¸ºç»“æŸ)
     pCur += wcslen(pCur) + 1;
   }
-  // ×îÖÕÔÙ×·¼ÓÒ»¸ö '\0' ×÷ÎªÖÕÖ¹
+  // æœ€ç»ˆå†è¿½åŠ ä¸€ä¸ª '\0' ä½œä¸ºç»ˆæ­¢
   result.push_back('\0');
   return result;
 }
 
-// °ÑÊäÈëµÄ ANSI ¶à×Ö·û´®(ÒÔ '\0'·Ö¸ô, Ë«'\0' ½áÎ², ³¤¶È=cbData) =>
-// ×ªÎª¿í¶à×Ö·û´®
-std::vector<wchar_t> AnsiMultiSzToWideMultiSz(const char* ansiMulti,
-                                              size_t cbData) {
+// æŠŠè¾“å…¥çš„ ANSI å¤šå­—ç¬¦ä¸²(ä»¥ '\0'åˆ†éš”, åŒ'\0' ç»“å°¾, é•¿åº¦=cbData) =>
+// è½¬ä¸ºå®½å¤šå­—ç¬¦ä¸²
+std::vector<wchar_t> AnsiMultiSzToWideMultiSz(const char* ansiMulti, size_t cbData) {
   std::vector<wchar_t> result;
 
   if (!ansiMulti || cbData == 0) {
-    // Èç¹û¿Õ£¬¾Í·ÅÒ»¸öË«¿Õ¿í×Ö·û´®
+    // å¦‚æœç©ºï¼Œå°±æ”¾ä¸€ä¸ªåŒç©ºå®½å­—ç¬¦ä¸²
     result.push_back(L'\0');
     result.push_back(L'\0');
     return result;
   }
 
-  // ±éÀú¶à×Ö·û´®ÖĞµÄÃ¿¸ö×Ó´®
+  // éå†å¤šå­—ç¬¦ä¸²ä¸­çš„æ¯ä¸ªå­ä¸²
   const char* pCur = ansiMulti;
   size_t offset = 0;
 
   while (true) {
-    // ÅĞ¶ÏÊÇ·ñµ½´ï»ò³¬¹ı»º³åÇøÄ©Î²
+    // åˆ¤æ–­æ˜¯å¦åˆ°è¾¾æˆ–è¶…è¿‡ç¼“å†²åŒºæœ«å°¾
     if (offset >= cbData) {
-      // Ã»ÓĞ¼ì²âµ½Ë«'\0'¾ÍÒÑµ½Ä©Î²£¬Ò²¸øËü²¹Ò»¸ö L'\0'
+      // æ²¡æœ‰æ£€æµ‹åˆ°åŒ'\0'å°±å·²åˆ°æœ«å°¾ï¼Œä¹Ÿç»™å®ƒè¡¥ä¸€ä¸ª L'\0'
       result.push_back(L'\0');
-      // ÔÙ²¹Ò»¸öL'\0'½áÊø
+      // å†è¡¥ä¸€ä¸ªL'\0'ç»“æŸ
       result.push_back(L'\0');
       break;
     }
 
-    // Èç¹ûµ±Ç°×Ö·ûÊÇ '\0'
+    // å¦‚æœå½“å‰å­—ç¬¦æ˜¯ '\0'
     if (pCur[0] == '\0') {
-      // ¿´¿´ÊÇ²»ÊÇË«¿Õ => È«²¿½áÊø
+      // çœ‹çœ‹æ˜¯ä¸æ˜¯åŒç©º => å…¨éƒ¨ç»“æŸ
       if ((offset + 1) < cbData && pCur[1] == '\0') {
-        // ÕâÀïÊÇË«'\0'
-        // ÏÈ¸øµ±Ç°×Ó´®Ä©Î²¼Ó¸ö L'\0' (±íÃ÷±¾×Ó´®½áÊø)
+        // è¿™é‡Œæ˜¯åŒ'\0'
+        // å…ˆç»™å½“å‰å­ä¸²æœ«å°¾åŠ ä¸ª L'\0' (è¡¨æ˜æœ¬å­ä¸²ç»“æŸ)
         result.push_back(L'\0');
-        // ÔÙ¸ø¶à×Ö·û´®Ä©Î²¼Ó¸ö L'\0'(Ë«¿Õ)
+        // å†ç»™å¤šå­—ç¬¦ä¸²æœ«å°¾åŠ ä¸ª L'\0'(åŒç©º)
         result.push_back(L'\0');
         break;
       } else {
-        // Ö»ÊÇµ¥¿Õ£¬±íÊ¾Ò»¸ö×Ó´®½áÊø
+        // åªæ˜¯å•ç©ºï¼Œè¡¨ç¤ºä¸€ä¸ªå­ä¸²ç»“æŸ
         result.push_back(L'\0');
         offset++;
         pCur++;
-        // ¼ÌĞøÏÂÒ»¸ö×Ó´®
+        // ç»§ç»­ä¸‹ä¸€ä¸ªå­ä¸²
         continue;
       }
     }
 
-    // ¶Áµ±Ç°×Ó´®Ö±µ½Óöµ½ '\0'
+    // è¯»å½“å‰å­ä¸²ç›´åˆ°é‡åˆ° '\0'
     std::string oneString;
     while (offset < cbData && pCur[0] != '\0') {
       oneString.push_back(pCur[0]);
       offset++;
       pCur++;
     }
-    // °Ñµ±Ç°×Ó´®×ª³É¿í×Ö·û
+    // æŠŠå½“å‰å­ä¸²è½¬æˆå®½å­—ç¬¦
     if (!oneString.empty()) {
-      int needed = MultiByteToWideChar(CP_ACP, 0, oneString.c_str(),
-                                       (int)oneString.size(), nullptr, 0);
+      int needed = MultiByteToWideChar(CP_ACP, 0, oneString.c_str(), (int)oneString.size(), nullptr, 0);
       if (needed > 0) {
         size_t oldSize = result.size();
         result.resize(oldSize + needed);
-        MultiByteToWideChar(CP_ACP, 0, oneString.c_str(), (int)oneString.size(),
-                            &result[oldSize], needed);
+        MultiByteToWideChar(CP_ACP, 0, oneString.c_str(), (int)oneString.size(), &result[oldSize], needed);
       }
     }
-    // Óöµ½ '\0' ¾Í»áÔÚÏÂÒ»ÂÖ or Ìõ¼şÀï´¦Àí => append L'\0'
-    // Ñ­»·»Øµ½ÉÏÃæµÄ if(pCur[0]=='\0') ·ÖÖ§
+    // é‡åˆ° '\0' å°±ä¼šåœ¨ä¸‹ä¸€è½® or æ¡ä»¶é‡Œå¤„ç† => append L'\0'
+    // å¾ªç¯å›åˆ°ä¸Šé¢çš„ if(pCur[0]=='\0') åˆ†æ”¯
   }
 
-  // Èç¹û result È«¿Õ£¬Ò²Òª±£Ö¤ÓĞË«¿ÕÖÕÖ¹
+  // å¦‚æœ result å…¨ç©ºï¼Œä¹Ÿè¦ä¿è¯æœ‰åŒç©ºç»ˆæ­¢
   if (result.empty()) {
     result.push_back(L'\0');
     result.push_back(L'\0');
@@ -115,140 +112,139 @@ std::vector<wchar_t> AnsiMultiSzToWideMultiSz(const char* ansiMulti,
 
 export {
   auto WINAPI RegCreateKeyExInternalW_mod(
-      HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpClass,
-      DWORD dwOptions, REGSAM samDesired,
-      const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult,
-      LPDWORD lpdwDisposition, LPVOID lpReserved) {
+      HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpClass, DWORD dwOptions, REGSAM samDesired,
+      const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition,
+      LPVOID lpReserved
+  ) {
     return regHandle.RegCreateKeyExInternalW(
-        hKey, lpSubKey, Reserved, lpClass, dwOptions, samDesired,
-        lpSecurityAttributes, phkResult, lpdwDisposition, lpReserved);
+        hKey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult,
+        lpdwDisposition, lpReserved
+    );
   }
 
-  auto WINAPI RegOpenKeyExW_mod(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions,
-                                REGSAM samDesired, PHKEY phkResult) {
-    return regHandle.RegOpenKeyExW(hKey, lpSubKey, ulOptions, samDesired,
-                                   phkResult);
+  auto WINAPI RegOpenKeyExW_mod(
+      HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult
+  ) {
+    return regHandle.RegOpenKeyExW(hKey, lpSubKey, ulOptions, samDesired, phkResult);
   }
 
   auto WINAPI RegQueryInfoKeyW_mod(
-      HKEY hKey, LPWSTR lpClass, LPDWORD lpcClass, LPDWORD lpReserved,
-      LPDWORD lpcSubKeys, LPDWORD lpcMaxSubKeyLen, LPDWORD lpcMaxClassLen,
-      LPDWORD lpcValues, LPDWORD lpcMaxValueNameLen, LPDWORD lpcMaxValueLen,
-      LPDWORD lpcbSecurityDescriptor, PFILETIME lpftLastWriteTime) {
+      HKEY hKey, LPWSTR lpClass, LPDWORD lpcClass, LPDWORD lpReserved, LPDWORD lpcSubKeys,
+      LPDWORD lpcMaxSubKeyLen, LPDWORD lpcMaxClassLen, LPDWORD lpcValues, LPDWORD lpcMaxValueNameLen,
+      LPDWORD lpcMaxValueLen, LPDWORD lpcbSecurityDescriptor, PFILETIME lpftLastWriteTime
+  ) {
     return regHandle.RegQueryInfoKeyW(
-        hKey, lpClass, lpcClass, lpReserved, lpcSubKeys, lpcMaxSubKeyLen,
-        lpcMaxClassLen, lpcValues, lpcMaxValueNameLen, lpcMaxValueLen,
-        lpcbSecurityDescriptor, lpftLastWriteTime);
+        hKey, lpClass, lpcClass, lpReserved, lpcSubKeys, lpcMaxSubKeyLen, lpcMaxClassLen, lpcValues,
+        lpcMaxValueNameLen, lpcMaxValueLen, lpcbSecurityDescriptor, lpftLastWriteTime
+    );
   }
 
-  auto WINAPI RegQueryValueExW_mod(HKEY hKey, LPCWSTR lpValueName,
-                                   LPDWORD lpReserved, LPDWORD lpType,
-                                   LPBYTE lpData, LPDWORD lpcbData) {
-    return regHandle.RegQueryValueExW(hKey, lpValueName, lpReserved, lpType,
-                                      lpData, lpcbData);
+  auto WINAPI RegQueryValueExW_mod(
+      HKEY hKey, LPCWSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE lpData, LPDWORD lpcbData
+  ) {
+    return regHandle.RegQueryValueExW(hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
   }
 
-  auto WINAPI RegEnumKeyExW_mod(HKEY hKey, DWORD dwIndex, LPWSTR lpName,
-                                LPDWORD lpcName, LPDWORD lpReserved,
-                                LPWSTR lpClass, LPDWORD lpcClass,
-                                PFILETIME lpftLastWriteTime) {
-    return regHandle.RegEnumKeyExW(hKey, dwIndex, lpName, lpcName, lpReserved,
-                                   lpClass, lpcClass, lpftLastWriteTime);
+  auto WINAPI RegEnumKeyExW_mod(
+      HKEY hKey, DWORD dwIndex, LPWSTR lpName, LPDWORD lpcName, LPDWORD lpReserved, LPWSTR lpClass,
+      LPDWORD lpcClass, PFILETIME lpftLastWriteTime
+  ) {
+    return regHandle.RegEnumKeyExW(
+        hKey, dwIndex, lpName, lpcName, lpReserved, lpClass, lpcClass, lpftLastWriteTime
+    );
   }
   LSTATUS WINAPI RegEnumValueW_mod(
-      HKEY hKey, DWORD dwIndex, LPWSTR lpValueName, LPDWORD lpcchValueName,
-      LPDWORD lpReserved, LPDWORD lpType, LPBYTE lpData, LPDWORD lpcbData) {
-    return regHandle.RegEnumValueW(hKey, dwIndex, lpValueName, lpcchValueName,
-                                   lpReserved, lpType, lpData, lpcbData);
+      HKEY hKey, DWORD dwIndex, LPWSTR lpValueName, LPDWORD lpcchValueName, LPDWORD lpReserved,
+      LPDWORD lpType, LPBYTE lpData, LPDWORD lpcbData
+  ) {
+    return regHandle.RegEnumValueW(
+        hKey, dwIndex, lpValueName, lpcchValueName, lpReserved, lpType, lpData, lpcbData
+    );
   }
-  LSTATUS WINAPI RegSetValueExW_mod(HKEY hKey, LPCWSTR lpValueName,
-                                    DWORD Reserved, DWORD dwType,
-                                    const BYTE* lpData, DWORD cbData) {
-    return regHandle.RegSetValueExW(hKey, lpValueName, Reserved, dwType, lpData,
-                                    cbData);
+  LSTATUS WINAPI RegSetValueExW_mod(
+      HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE* lpData, DWORD cbData
+  ) {
+    return regHandle.RegSetValueExW(hKey, lpValueName, Reserved, dwType, lpData, cbData);
   }
   // ******************************************************************
   // for the ANSI func, convert the input to unicode and call the unicode func
-  // ÓĞoutputµÄÇé¿öÏÂ£¬ĞèÒª°Ñunicode×ª»Øansi
+  // æœ‰outputçš„æƒ…å†µä¸‹ï¼Œéœ€è¦æŠŠunicodeè½¬å›ansi
   // ******************************************************************
   LONG WINAPI RegCreateKeyExInternalA_mod(
-      HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass,
-      DWORD dwOptions, REGSAM samDesired,
-      const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult,
-      LPDWORD lpdwDisposition,
-      LPVOID lpReserved  // ±£³ÖºÍW_modÒ»ÖÂ
+      HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired,
+      const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition,
+      LPVOID lpReserved  // ä¿æŒå’ŒW_modä¸€è‡´
   ) {
-    // 1. ×ª»»ÊäÈëÎª¿í×Ö·û
-    std::wstring wSubKey = AnsiToWide(lpSubKey);
-    std::wstring wClass = AnsiToWide(lpClass);
+    // 1. è½¬æ¢è¾“å…¥ä¸ºå®½å­—ç¬¦
+    auto wSubKey = strConvert(lpSubKey);
+    auto wClass = strConvert(lpClass);
 
-    // 2. µ÷ÓÃW°æ
+    // 2. è°ƒç”¨Wç‰ˆ
     LONG ret = RegCreateKeyExInternalW_mod(
-        hKey, wSubKey.empty() ? nullptr : wSubKey.c_str(), Reserved,
-        wClass.empty() ? nullptr : const_cast<LPWSTR>(wClass.c_str()),
-        dwOptions, samDesired, lpSecurityAttributes, phkResult, lpdwDisposition,
-        lpReserved);
+        hKey, wSubKey.get(), Reserved, wClass.get(), dwOptions, samDesired, lpSecurityAttributes, phkResult,
+        lpdwDisposition, lpReserved
+    );
 
     return ret;
   }
-  LONG WINAPI RegOpenKeyExA_mod(HKEY hKey, LPCSTR lpSubKey, DWORD ulOptions,
-                                REGSAM samDesired, PHKEY phkResult) {
-    std::wstring wSubKey = AnsiToWide(lpSubKey);
+  LONG WINAPI RegOpenKeyExA_mod(
+      HKEY hKey, LPCSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult
+  ) {
+    auto wSubKey = strConvert(lpSubKey);
 
-    return RegOpenKeyExW_mod(hKey, wSubKey.empty() ? nullptr : wSubKey.c_str(),
-                             ulOptions, samDesired, phkResult);
+    return RegOpenKeyExW_mod(hKey, wSubKey.get(), ulOptions, samDesired, phkResult);
   }
   LONG WINAPI RegQueryInfoKeyA_mod(
-      HKEY hKey, LPSTR lpClass, LPDWORD lpcchClass, LPDWORD lpReserved,
-      LPDWORD lpcSubKeys, LPDWORD lpcbMaxSubKeyLen, LPDWORD lpcbMaxClassLen,
-      LPDWORD lpcValues, LPDWORD lpcbMaxValueNameLen, LPDWORD lpcbMaxValueLen,
-      LPDWORD lpcbSecurityDescriptor, PFILETIME lpftLastWriteTime) {
+      HKEY hKey, LPSTR lpClass, LPDWORD lpcchClass, LPDWORD lpReserved, LPDWORD lpcSubKeys,
+      LPDWORD lpcbMaxSubKeyLen, LPDWORD lpcbMaxClassLen, LPDWORD lpcValues, LPDWORD lpcbMaxValueNameLen,
+      LPDWORD lpcbMaxValueLen, LPDWORD lpcbSecurityDescriptor, PFILETIME lpftLastWriteTime
+  ) {
     LONG ret;
     DWORD cchClassW = 0;
     std::vector<WCHAR> tmpClassW;
 
-    // Èç¹ûµ÷ÓÃ·½ÏëÒªclass( lpClass != nullptr ²¢ÇÒ lpcchClass != nullptr )
+    // å¦‚æœè°ƒç”¨æ–¹æƒ³è¦class( lpClass != nullptr å¹¶ä¸” lpcchClass != nullptr )
     if (lpClass && lpcchClass && *lpcchClass > 0) {
-      cchClassW =
-          *lpcchClass;  // lpcchClass ÀïÊÇANSI×Ö·ûÊı, ÏÈÖ±½ÓÄÃÀ´µ±WCHAR×î´óÖµ
-      tmpClassW.resize(cchClassW + 1);  // +1´æ·ÅÖÕÖ¹·û
+      cchClassW = *lpcchClass;          // lpcchClass é‡Œæ˜¯ANSIå­—ç¬¦æ•°, å…ˆç›´æ¥æ‹¿æ¥å½“WCHARæœ€å¤§å€¼
+      tmpClassW.resize(cchClassW + 1);  // +1å­˜æ”¾ç»ˆæ­¢ç¬¦
     }
 
-    ret = RegQueryInfoKeyW(hKey, tmpClassW.empty() ? nullptr : tmpClassW.data(),
-                           tmpClassW.empty() ? nullptr : &cchClassW, lpReserved,
-                           lpcSubKeys, lpcbMaxSubKeyLen, lpcbMaxClassLen,
-                           lpcValues, lpcbMaxValueNameLen, lpcbMaxValueLen,
-                           lpcbSecurityDescriptor, lpftLastWriteTime);
+    ret = RegQueryInfoKeyW(
+        hKey, tmpClassW.empty() ? nullptr : tmpClassW.data(), tmpClassW.empty() ? nullptr : &cchClassW,
+        lpReserved, lpcSubKeys, lpcbMaxSubKeyLen, lpcbMaxClassLen, lpcValues, lpcbMaxValueNameLen,
+        lpcbMaxValueLen, lpcbSecurityDescriptor, lpftLastWriteTime
+    );
 
     if (ret == ERROR_SUCCESS && !tmpClassW.empty()) {
-      // cchClassWÊÇÊµ¼Ê·µ»ØµÄ¿í×Ö·ûÊı£¬²»º¬ÖÕÖ¹·û(¹Ù·½ÎÄµµ)
-      // ÊÖ¶¯¼Ó¸öÖÕÖ¹·û£¬·ÀÓù°²È«
+      // cchClassWæ˜¯å®é™…è¿”å›çš„å®½å­—ç¬¦æ•°ï¼Œä¸å«ç»ˆæ­¢ç¬¦(å®˜æ–¹æ–‡æ¡£)
+      // æ‰‹åŠ¨åŠ ä¸ªç»ˆæ­¢ç¬¦ï¼Œé˜²å¾¡å®‰å…¨
       if (cchClassW < tmpClassW.size()) {
         tmpClassW[cchClassW] = L'\0';
       } else {
-        // ³öÓÚ°²È«£¬Ğ´²»ÁË¾Í²»Ğ´
+        // å‡ºäºå®‰å…¨ï¼Œå†™ä¸äº†å°±ä¸å†™
       }
 
-      // ×ª»ØANSI
+      // è½¬å›ANSI
       int neededA = WideCharToMultiByte(
-          CP_ACP, 0, tmpClassW.data(), (int)cchClassW, lpClass,
-          (lpcchClass ? *lpcchClass : 0), nullptr, nullptr);
+          CP_ACP, 0, tmpClassW.data(), (int)cchClassW, lpClass, (lpcchClass ? *lpcchClass : 0), nullptr,
+          nullptr
+      );
 
       if (neededA > 0 && neededA < (int)*lpcchClass) {
-        lpClass[neededA] = '\0';  // ÖÕÖ¹·û
+        lpClass[neededA] = '\0';  // ç»ˆæ­¢ç¬¦
         *lpcchClass = neededA;
       } else {
-        // »º³å²»×ã
+        // ç¼“å†²ä¸è¶³
         ret = ERROR_MORE_DATA;
       }
     }
 
     return ret;
   }
-  LONG WINAPI RegEnumKeyExA_mod(HKEY hKey, DWORD dwIndex, LPSTR lpName,
-                                LPDWORD lpcName, LPDWORD lpReserved,
-                                LPSTR lpClass, LPDWORD lpcClass,
-                                PFILETIME lpftLastWriteTime) {
+  LONG WINAPI RegEnumKeyExA_mod(
+      HKEY hKey, DWORD dwIndex, LPSTR lpName, LPDWORD lpcName, LPDWORD lpReserved, LPSTR lpClass,
+      LPDWORD lpcClass, PFILETIME lpftLastWriteTime
+  ) {
     if (!lpName || !lpcName) {
       return ERROR_INVALID_PARAMETER;
     }
@@ -264,18 +260,17 @@ export {
     }
 
     LONG ret = RegEnumKeyExW(
-        hKey, dwIndex, tmpNameW.data(), &cchNameW, lpReserved,
-        tmpClassW.empty() ? nullptr : tmpClassW.data(),
-        tmpClassW.empty() ? nullptr : &cchClassW, lpftLastWriteTime);
+        hKey, dwIndex, tmpNameW.data(), &cchNameW, lpReserved, tmpClassW.empty() ? nullptr : tmpClassW.data(),
+        tmpClassW.empty() ? nullptr : &cchClassW, lpftLastWriteTime
+    );
 
     if (ret == ERROR_SUCCESS) {
-      // ×ª»»name
+      // è½¬æ¢name
       if (cchNameW <= tmpNameW.size()) {
         tmpNameW[cchNameW] = L'\0';
       }
       int neededNameA =
-          WideCharToMultiByte(CP_ACP, 0, tmpNameW.data(), cchNameW, lpName,
-                              *lpcName, nullptr, nullptr);
+          WideCharToMultiByte(CP_ACP, 0, tmpNameW.data(), cchNameW, lpName, *lpcName, nullptr, nullptr);
       if (neededNameA >= 0 && neededNameA < (int)*lpcName) {
         lpName[neededNameA] = '\0';
         *lpcName = neededNameA;
@@ -283,14 +278,14 @@ export {
         ret = ERROR_MORE_DATA;
       }
 
-      // ×ª»»class
+      // è½¬æ¢class
       if (ret == ERROR_SUCCESS && !tmpClassW.empty()) {
         if (cchClassW <= tmpClassW.size()) {
           tmpClassW[cchClassW] = L'\0';
         }
-        int neededClassA =
-            WideCharToMultiByte(CP_ACP, 0, tmpClassW.data(), cchClassW, lpClass,
-                                (lpcClass ? *lpcClass : 0), nullptr, nullptr);
+        int neededClassA = WideCharToMultiByte(
+            CP_ACP, 0, tmpClassW.data(), cchClassW, lpClass, (lpcClass ? *lpcClass : 0), nullptr, nullptr
+        );
         if (lpcClass && neededClassA >= 0 && neededClassA < (int)*lpcClass) {
           lpClass[neededClassA] = '\0';
           *lpcClass = neededClassA;
@@ -303,108 +298,106 @@ export {
     return ret;
   }
 
-  LONG WINAPI RegQueryValueExA_mod(HKEY hKey, LPCSTR lpValueName,
-                                   LPDWORD lpReserved, LPDWORD lpType,
-                                   LPBYTE lpData, LPDWORD lpcbData) {
+  LONG WINAPI RegQueryValueExA_mod(
+      HKEY hKey, LPCSTR lpValueName, LPDWORD lpReserved, LPDWORD lpType, LPBYTE lpData, LPDWORD lpcbData
+  ) {
     if (!lpValueName) {
       return ERROR_INVALID_PARAMETER;
     }
 
-    // 1) ×ª»»ValueName
+    // 1) è½¬æ¢ValueName
     std::wstring wValName = AnsiToWide(lpValueName);
 
-    // 2) ÏÈÌ½²âËùĞè´óĞ¡
+    // 2) å…ˆæ¢æµ‹æ‰€éœ€å¤§å°
     DWORD dwType = 0;
     DWORD cbNeeded = 0;
-    LONG ret = RegQueryValueExW(hKey, wValName.c_str(), lpReserved, &dwType,
-                                nullptr, &cbNeeded);
+    LONG ret = RegQueryValueExW(hKey, wValName.c_str(), lpReserved, &dwType, nullptr, &cbNeeded);
 
     if (ret != ERROR_SUCCESS && ret != ERROR_MORE_DATA) {
       return ret;
     }
 
-    // °ÑÌ½²âµ½µÄtypeºÍsizeĞ´»Ø
+    // æŠŠæ¢æµ‹åˆ°çš„typeå’Œsizeå†™å›
     if (lpType)
       *lpType = dwType;
     if (lpcbData) {
-      // Èç¹ûlpData==nullptr£¬µ÷ÓÃ·½½ö½öÏë»ñÈ¡´óĞ¡ºÍÀàĞÍ
+      // å¦‚æœlpData==nullptrï¼Œè°ƒç”¨æ–¹ä»…ä»…æƒ³è·å–å¤§å°å’Œç±»å‹
       if (!lpData) {
         *lpcbData = cbNeeded;
         return ret;
       }
     } else {
-      // µ÷ÓÃ·½²»¹ØĞÄ´óĞ¡£¬µ«¸øÁËlpData£¬ÕâÑùÒ²ÄÜ³¢ÊÔÒ»´Î
+      // è°ƒç”¨æ–¹ä¸å…³å¿ƒå¤§å°ï¼Œä½†ç»™äº†lpDataï¼Œè¿™æ ·ä¹Ÿèƒ½å°è¯•ä¸€æ¬¡
     }
 
-    // 3) ·ÖÅäÁÙÊ±»º³åÇø£¨cbNeeded ¿ÉÄÜÊÇ0±íÊ¾ÖµÎª¿Õ×Ö·û´®£©
-    std::vector<BYTE> tmpBuf(cbNeeded + 2);  // ¸øMULTI_SZµÈ¶àÁôµã¿Õ¼ä
+    // 3) åˆ†é…ä¸´æ—¶ç¼“å†²åŒºï¼ˆcbNeeded å¯èƒ½æ˜¯0è¡¨ç¤ºå€¼ä¸ºç©ºå­—ç¬¦ä¸²ï¼‰
+    std::vector<BYTE> tmpBuf(cbNeeded + 2);  // ç»™MULTI_SZç­‰å¤šç•™ç‚¹ç©ºé—´
 
-    // 4) ÔÙ´Îµ÷ÓÃW°æ»ñÈ¡Êı¾İ
+    // 4) å†æ¬¡è°ƒç”¨Wç‰ˆè·å–æ•°æ®
     DWORD dwType2 = 0;
     DWORD cbActual = cbNeeded;  // second call
-    ret = RegQueryValueExW(hKey, wValName.c_str(), lpReserved, &dwType2,
-                           tmpBuf.data(), &cbActual);
+    ret = RegQueryValueExW(hKey, wValName.c_str(), lpReserved, &dwType2, tmpBuf.data(), &cbActual);
     if (ret != ERROR_SUCCESS) {
       return ret;
     }
 
-    // ÔÙ´ÎĞ´»Øtype
+    // å†æ¬¡å†™å›type
     if (lpType) {
       *lpType = dwType2;
     }
 
-    // 5) ¸ù¾İÀàĞÍÅĞ¶Ï
+    // 5) æ ¹æ®ç±»å‹åˆ¤æ–­
     if (dwType2 == REG_SZ || dwType2 == REG_EXPAND_SZ) {
-      // tmpBufÀïÊÇÒ»¸öÒÔL'\0'ÖÕÖ¹µÄ¿í×Ö·û´®
-      // ×ª³ÉANSI
+      // tmpBufé‡Œæ˜¯ä¸€ä¸ªä»¥L'\0'ç»ˆæ­¢çš„å®½å­—ç¬¦ä¸²
+      // è½¬æˆANSI
       LPCWSTR wData = reinterpret_cast<LPCWSTR>(tmpBuf.data());
 
-      // °²È«»ñÈ¡¿í×Ö·û³¤¶È(¿ÉÄÜ°üÀ¨ÖÕÖ¹·û)
+      // å®‰å…¨è·å–å®½å­—ç¬¦é•¿åº¦(å¯èƒ½åŒ…æ‹¬ç»ˆæ­¢ç¬¦)
       size_t cchW = 0;
       if (cbActual >= 2) {
-        // ¿í×Ö·û¸öÊı = cbActual / sizeof(WCHAR)£¬»¹Òª±£Ö¤²»Ô½½ç
+        // å®½å­—ç¬¦ä¸ªæ•° = cbActual / sizeof(WCHAR)ï¼Œè¿˜è¦ä¿è¯ä¸è¶Šç•Œ
         cchW = cbActual / sizeof(WCHAR);
       }
 
-      // ×ªANSI(µ¥×Ö·û´®)
+      // è½¬ANSI(å•å­—ç¬¦ä¸²)
       int neededA = 0;
       if (cchW > 0) {
-        // ²»ÒªÓÃwcslen()Ã¤È¡£¬ÒòÎªREG_SZ µÄÊı¾İ²»Ò»¶¨¶¼Ğ´Âú?
-        // ×î°²È«ÊÇ°ÑÄ©Î²¶àÓà¿Õ¼ä²¹0
-        // ÕâÀï¼ÙÉèÏµÍ³±£Ö¤Öµ½áÎ²ÓĞ\0
-        neededA =
-            WideCharToMultiByte(CP_ACP, 0, wData,
-                                (int)(cchW - 1),  // -1 È¥µôÖÕÖ¹·û£¿
-                                reinterpret_cast<LPSTR>(lpData),
-                                (lpcbData ? *lpcbData : 0), nullptr, nullptr);
+        // ä¸è¦ç”¨wcslen()ç›²å–ï¼Œå› ä¸ºREG_SZ çš„æ•°æ®ä¸ä¸€å®šéƒ½å†™æ»¡?
+        // æœ€å®‰å…¨æ˜¯æŠŠæœ«å°¾å¤šä½™ç©ºé—´è¡¥0
+        // è¿™é‡Œå‡è®¾ç³»ç»Ÿä¿è¯å€¼ç»“å°¾æœ‰\0
+        neededA = WideCharToMultiByte(
+            CP_ACP, 0, wData,
+            (int)(cchW - 1),  // -1 å»æ‰ç»ˆæ­¢ç¬¦ï¼Ÿ
+            reinterpret_cast<LPSTR>(lpData), (lpcbData ? *lpcbData : 0), nullptr, nullptr
+        );
       }
 
       if (neededA < 0 || (lpcbData && (DWORD)neededA >= *lpcbData)) {
-        // »º³å²»¹»
+        // ç¼“å†²ä¸å¤Ÿ
         ret = ERROR_MORE_DATA;
-      } else {
-        // Ğ´ANSIÖÕÖ¹·û
+      } else if (lpData) {
+        // å†™ANSIç»ˆæ­¢ç¬¦
         lpData[neededA] = 0;
         if (lpcbData) {
           *lpcbData = neededA;
         }
       }
     } else if (dwType2 == REG_MULTI_SZ) {
-      // tmpBufÀïÊÇÒ»¸ö¶à×Ö·û´®(L'\0'·Ö¸ô, Ë« L'\0' ½áÎ²)
+      // tmpBufé‡Œæ˜¯ä¸€ä¸ªå¤šå­—ç¬¦ä¸²(L'\0'åˆ†éš”, åŒ L'\0' ç»“å°¾)
       LPCWSTR wMulti = reinterpret_cast<LPCWSTR>(tmpBuf.data());
       size_t cchW = cbActual / sizeof(WCHAR);
 
-      // ½«¡°¿í¶à×Ö·û´®¡± ×ª³É ¡°ANSI¶à×Ö·û´®¡±
-      // ĞÎÈç: Wide1\0Wide2\0Wide3\0\0 => Ansi1\0Ansi2\0Ansi3\0\0
+      // å°†â€œå®½å¤šå­—ç¬¦ä¸²â€ è½¬æˆ â€œANSIå¤šå­—ç¬¦ä¸²â€
+      // å½¢å¦‚: Wide1\0Wide2\0Wide3\0\0 => Ansi1\0Ansi2\0Ansi3\0\0
       std::string ansiMulti = WideMultiSzToAnsiMultiSz(wMulti, cchW);
 
-      DWORD needed = (DWORD)ansiMulti.size();  // °üº¬×îºóµÄË« \0
+      DWORD needed = (DWORD)ansiMulti.size();  // åŒ…å«æœ€åçš„åŒ \0
 
       if (lpcbData && needed > *lpcbData) {
-        // »º³å²»¹»
+        // ç¼“å†²ä¸å¤Ÿ
         ret = ERROR_MORE_DATA;
       } else {
-        // ¿½±´
+        // æ‹·è´
         if (lpData) {
           memcpy(lpData, ansiMulti.data(), needed);
         }
@@ -413,7 +406,7 @@ export {
         }
       }
     } else {
-      // ·Ç×Ö·û´®Àà(º¬REG_BINARY, REG_DWORD, REG_QWORD, etc.), Ö±½Ó¸´ÖÆ
+      // éå­—ç¬¦ä¸²ç±»(å«REG_BINARY, REG_DWORD, REG_QWORD, etc.), ç›´æ¥å¤åˆ¶
       if (lpcbData && cbActual > *lpcbData) {
         ret = ERROR_MORE_DATA;
       } else {
@@ -430,41 +423,42 @@ export {
   }
 
   LSTATUS WINAPI RegEnumValueA_mod(
-      HKEY hKey, DWORD dwIndex, LPSTR lpValueName, LPDWORD lpcchValueName,
-      LPDWORD lpReserved, LPDWORD lpType, LPBYTE lpData,
-      LPDWORD lpcbData) {  // 1. ÏÈÓÃ¿í»º³åÃ¶¾Ù ValueName
+      HKEY hKey, DWORD dwIndex, LPSTR lpValueName, LPDWORD lpcchValueName, LPDWORD lpReserved, LPDWORD lpType,
+      LPBYTE lpData,
+      LPDWORD lpcbData
+  ) {  // 1. å…ˆç”¨å®½ç¼“å†²æšä¸¾ ValueName
     DWORD cchNameW = (lpcchValueName && *lpcchValueName) ? *lpcchValueName : 0;
-    std::vector<WCHAR> nameBufW(cchNameW + 2);  // ¶àÁô2¸ö
+    std::vector<WCHAR> nameBufW(cchNameW + 2);  // å¤šç•™2ä¸ª
 
-    // 2. ×¼±¸ Data »º³å
+    // 2. å‡†å¤‡ Data ç¼“å†²
     DWORD cbDataTmp = (lpcbData ? *lpcbData : 0);
     std::vector<BYTE> tmpDataBuf(cbDataTmp + 2);
 
     DWORD dwTypeLocal = 0;
-    LONG ret =
-        RegEnumValueW_mod(hKey, dwIndex, nameBufW.data(), &cchNameW, lpReserved,
-                          &dwTypeLocal, tmpDataBuf.data(), &cbDataTmp);
+    LONG ret = RegEnumValueW_mod(
+        hKey, dwIndex, nameBufW.data(), &cchNameW, lpReserved, &dwTypeLocal, tmpDataBuf.data(), &cbDataTmp
+    );
     if (ret != ERROR_SUCCESS)
       return ret;
 
-    // 3. ´¦Àí ValueName(Unicode->ANSI)
+    // 3. å¤„ç† ValueName(Unicode->ANSI)
     if (lpValueName && lpcchValueName && cchNameW > 0) {
-      // ×·¼ÓÖÕÖ¹·û
+      // è¿½åŠ ç»ˆæ­¢ç¬¦
       if (cchNameW < nameBufW.size()) {
         nameBufW[cchNameW] = L'\0';
       }
-      int neededA =
-          WideCharToMultiByte(CP_ACP, 0, nameBufW.data(), cchNameW, lpValueName,
-                              *lpcchValueName, nullptr, nullptr);
+      int neededA = WideCharToMultiByte(
+          CP_ACP, 0, nameBufW.data(), cchNameW, lpValueName, *lpcchValueName, nullptr, nullptr
+      );
       if (neededA >= 0 && (DWORD)neededA < *lpcchValueName) {
         lpValueName[neededA] = '\0';
         *lpcchValueName = neededA;
       } else {
-        // »º³å²»¹»
+        // ç¼“å†²ä¸å¤Ÿ
         ret = ERROR_MORE_DATA;
       }
     } else {
-      // Èç¹ûÃ»¸øÖ¸Õë»ò´óĞ¡, Ö±½Ó²»´¦Àí
+      // å¦‚æœæ²¡ç»™æŒ‡é’ˆæˆ–å¤§å°, ç›´æ¥ä¸å¤„ç†
       if (lpcchValueName)
         *lpcchValueName = 0;
     }
@@ -477,22 +471,23 @@ export {
       return ret;
     }
 
-    // 4. ¸ù¾İdwTypeLocal ´¦Àí data
+    // 4. æ ¹æ®dwTypeLocal å¤„ç† data
     if (lpData && lpcbData) {
       if (dwTypeLocal == REG_SZ || dwTypeLocal == REG_EXPAND_SZ) {
-        // tmpDataBuf -> µ¥¿í×Ö·û×Ö·û´®
+        // tmpDataBuf -> å•å®½å­—ç¬¦å­—ç¬¦ä¸²
         LPCWSTR wData = reinterpret_cast<LPCWSTR>(tmpDataBuf.data());
         size_t cchW = cbDataTmp / sizeof(WCHAR);
 
         if (cchW > 0) {
-          // ×·¼ÓÖÕÖ¹·û
-          // (×¢ÒâREG_SZÒ»°ã±£Ö¤\0ÖÕÖ¹, µ«·ÀÓùÆğ¼û¶àĞ´)
+          // è¿½åŠ ç»ˆæ­¢ç¬¦
+          // (æ³¨æ„REG_SZä¸€èˆ¬ä¿è¯\0ç»ˆæ­¢, ä½†é˜²å¾¡èµ·è§å¤šå†™)
           if (cchW + 1 < tmpDataBuf.size() / sizeof(WCHAR)) {
             ((LPWSTR)tmpDataBuf.data())[cchW] = L'\0';
           }
           int neededA = WideCharToMultiByte(
-              CP_ACP, 0, wData, (int)(cchW - 1),  // -1ÅÅ³ıÄ©Î²'\0'
-              reinterpret_cast<LPSTR>(lpData), *lpcbData, nullptr, nullptr);
+              CP_ACP, 0, wData, (int)(cchW - 1),  // -1æ’é™¤æœ«å°¾'\0'
+              reinterpret_cast<LPSTR>(lpData), *lpcbData, nullptr, nullptr
+          );
           if (neededA >= 0 && (DWORD)neededA < *lpcbData) {
             lpData[neededA] = 0;
             *lpcbData = neededA;
@@ -500,18 +495,18 @@ export {
             ret = ERROR_MORE_DATA;
           }
         } else {
-          // ¿Õ×Ö·û´®
+          // ç©ºå­—ç¬¦ä¸²
           if (*lpcbData > 0) {
             lpData[0] = 0;
           }
-          *lpcbData = 1;  // ½ö '\0'
+          *lpcbData = 1;  // ä»… '\0'
         }
       } else if (dwTypeLocal == REG_MULTI_SZ) {
         LPCWSTR wMulti = reinterpret_cast<LPCWSTR>(tmpDataBuf.data());
         size_t cchW = cbDataTmp / sizeof(WCHAR);
 
         std::string ansiMulti = WideMultiSzToAnsiMultiSz(wMulti, cchW);
-        DWORD needed = (DWORD)ansiMulti.size();  // °üº¬Ë«'\0'
+        DWORD needed = (DWORD)ansiMulti.size();  // åŒ…å«åŒ'\0'
 
         if (needed > *lpcbData) {
           ret = ERROR_MORE_DATA;
@@ -520,7 +515,7 @@ export {
           *lpcbData = needed;
         }
       } else {
-        // ÆäËûÖ±½Ó¸´ÖÆ
+        // å…¶ä»–ç›´æ¥å¤åˆ¶
         if (cbDataTmp > *lpcbData) {
           ret = ERROR_MORE_DATA;
         } else {
@@ -531,79 +526,80 @@ export {
     }
     return ret;
   }
-  LSTATUS WINAPI RegSetValueExA_mod(HKEY hKey, LPCSTR lpValueName,
-                                    DWORD Reserved, DWORD dwType,
-                                    const BYTE* lpData, DWORD cbData) {
-    // 1) ×ª»» ValueName => ¿í×Ö·û
-    //   Èç¹û lpValueName Îª¿Õ»ò×Ö·û´®¿Õ, wValueName Îª¿Õ, ´«¿ÕÖ¸ÕëÒ²ĞĞ
+  LSTATUS WINAPI RegSetValueExA_mod(
+      HKEY hKey, LPCSTR lpValueName, DWORD Reserved, DWORD dwType, const BYTE* lpData, DWORD cbData
+  ) {
+    // 1) è½¬æ¢ ValueName => å®½å­—ç¬¦
+    //   å¦‚æœ lpValueName ä¸ºç©ºæˆ–å­—ç¬¦ä¸²ç©º, wValueName ä¸ºç©º, ä¼ ç©ºæŒ‡é’ˆä¹Ÿè¡Œ
     std::wstring wValueName;
     if (lpValueName && *lpValueName) {
       int needed = MultiByteToWideChar(CP_ACP, 0, lpValueName, -1, nullptr, 0);
       if (needed > 0) {
-        wValueName.resize(needed - 1);  // -1ÒòÎªneeded°üº¬ÖÕÖ¹·û
+        wValueName.resize(needed - 1);  // -1å› ä¸ºneededåŒ…å«ç»ˆæ­¢ç¬¦
         MultiByteToWideChar(CP_ACP, 0, lpValueName, -1, &wValueName[0], needed);
       }
     }
 
-    // Èç¹ûÃ»ÓĞÊı¾İ»òÊı¾İ³¤¶È=0, ¿ÉÒÔÖ±½Óµ÷ÓÃW°æ(ÓĞĞ©ÀàĞÍ¿ÉĞ´¿ÕÖµ)
+    // å¦‚æœæ²¡æœ‰æ•°æ®æˆ–æ•°æ®é•¿åº¦=0, å¯ä»¥ç›´æ¥è°ƒç”¨Wç‰ˆ(æœ‰äº›ç±»å‹å¯å†™ç©ºå€¼)
     if (!lpData || cbData == 0) {
       return RegSetValueExW_mod(
-          hKey, wValueName.empty() ? nullptr : wValueName.c_str(), Reserved,
-          dwType, nullptr, 0);
+          hKey, wValueName.empty() ? nullptr : wValueName.c_str(), Reserved, dwType, nullptr, 0
+      );
     }
 
-    // 2) ¸ù¾İdwTypeÅĞ¶ÏÊÇ·ñÒª°Ñ lpData (ANSI) ×ª³É¿í×Ö·û
+    // 2) æ ¹æ®dwTypeåˆ¤æ–­æ˜¯å¦è¦æŠŠ lpData (ANSI) è½¬æˆå®½å­—ç¬¦
     if (dwType == REG_SZ || dwType == REG_EXPAND_SZ) {
-      // 2.1 µ¥×Ö·û´®: ANSI => Unicode
-      // cbDataÊÇ°üº¬ÖÕÖ¹·ûµÄ³¤¶È(×Ö½ÚÊı)? WinAPIÀïĞ´×Ö·û´®Ê±Ò»°ãÊÇ×Ö½ÚÊı(º¬\0),
-      //   Ğè×ª»¯³É wchar_t length.
-      //   ÏÈ°ÑÔ­ANSI×Ö·û´®±ä³É std::wstring
-      //   (Ò²¿ÉÒÔÖ±½ÓMultiByteToWideChar, ¿´ÄãÏ°¹ß)
+      // 2.1 å•å­—ç¬¦ä¸²: ANSI => Unicode
+      // cbDataæ˜¯åŒ…å«ç»ˆæ­¢ç¬¦çš„é•¿åº¦(å­—èŠ‚æ•°)? WinAPIé‡Œå†™å­—ç¬¦ä¸²æ—¶ä¸€èˆ¬æ˜¯å­—èŠ‚æ•°(å«\0),
+      //   éœ€è½¬åŒ–æˆ wchar_t length.
+      //   å…ˆæŠŠåŸANSIå­—ç¬¦ä¸²å˜æˆ std::wstring
+      //   (ä¹Ÿå¯ä»¥ç›´æ¥MultiByteToWideChar, çœ‹ä½ ä¹ æƒ¯)
       const char* ansiStr = reinterpret_cast<const char*>(lpData);
 
       int neededW = MultiByteToWideChar(
           CP_ACP, 0, ansiStr,
-          (int)cbData / sizeof(char),  // Õâ¸öÊÇ¹À¼Æ, -1 Ò²¿ÉÒÔ
-          nullptr, 0);
+          (int)cbData / sizeof(char),  // è¿™ä¸ªæ˜¯ä¼°è®¡, -1 ä¹Ÿå¯ä»¥
+          nullptr, 0
+      );
       if (neededW <= 0) {
-        // ×ª»»Ê§°Ü, Äã¿ÉÒÔ¸ù¾İĞèÇó·µ»ØERROR_INVALID_PARAMETER
+        // è½¬æ¢å¤±è´¥, ä½ å¯ä»¥æ ¹æ®éœ€æ±‚è¿”å›ERROR_INVALID_PARAMETER
         return ERROR_INVALID_PARAMETER;
       }
 
-      // ·ÖÅäÁÙÊ±¿í»º³å
-      std::vector<wchar_t> tmpW(neededW + 1);  // +1·ÀÖ¹Î²²¿Ô½½ç
-      MultiByteToWideChar(CP_ACP, 0, ansiStr, (int)cbData / sizeof(char),
-                          tmpW.data(), neededW);
+      // åˆ†é…ä¸´æ—¶å®½ç¼“å†²
+      std::vector<wchar_t> tmpW(neededW + 1);  // +1é˜²æ­¢å°¾éƒ¨è¶Šç•Œ
+      MultiByteToWideChar(CP_ACP, 0, ansiStr, (int)cbData / sizeof(char), tmpW.data(), neededW);
 
-      // ¿ÉÄÜ×îºó²»´ø \0, ÕâÀï²¹ÉÏ
+      // å¯èƒ½æœ€åä¸å¸¦ \0, è¿™é‡Œè¡¥ä¸Š
       tmpW[neededW] = L'\0';
 
-      // 2.2 ÏÖÔÚµ÷ÓÃW°æÊ±, lpDataÒª´«tmpW.data(),
-      // ³¤¶ÈÊÇ(neededW+1)*sizeof(wchar_t)
+      // 2.2 ç°åœ¨è°ƒç”¨Wç‰ˆæ—¶, lpDataè¦ä¼ tmpW.data(),
+      // é•¿åº¦æ˜¯(neededW+1)*sizeof(wchar_t)
       DWORD cbDataW = (neededW + 1) * sizeof(wchar_t);
 
       return RegSetValueExW_mod(
-          hKey, wValueName.empty() ? nullptr : wValueName.c_str(), Reserved,
-          dwType, reinterpret_cast<const BYTE*>(tmpW.data()), cbDataW);
+          hKey, wValueName.empty() ? nullptr : wValueName.c_str(), Reserved, dwType,
+          reinterpret_cast<const BYTE*>(tmpW.data()), cbDataW
+      );
     } else if (dwType == REG_MULTI_SZ) {
-      // 3) ¶à×Ö·û´®: ANSI MultiSZ => Unicode MultiSZ
-      // cbData = ×Ö½ÚÊı(º¬ËùÓĞ×Ó´®+Ë«\0)
-      // µ÷ÓÃÇ°Ãæ¶¨ÒåµÄ AnsiMultiSzToWideMultiSz
+      // 3) å¤šå­—ç¬¦ä¸²: ANSI MultiSZ => Unicode MultiSZ
+      // cbData = å­—èŠ‚æ•°(å«æ‰€æœ‰å­ä¸²+åŒ\0)
+      // è°ƒç”¨å‰é¢å®šä¹‰çš„ AnsiMultiSzToWideMultiSz
       const char* ansiMulti = reinterpret_cast<const char*>(lpData);
       std::vector<wchar_t> wMulti = AnsiMultiSzToWideMultiSz(ansiMulti, cbData);
 
-      // Òª°Ñ wMulti ´«¸ø W °æ
-      DWORD cbDataW =
-          (DWORD)(wMulti.size() * sizeof(wchar_t));  // vectorÀïº¬Ë«¿Õ½áÎ²
+      // è¦æŠŠ wMulti ä¼ ç»™ W ç‰ˆ
+      DWORD cbDataW = (DWORD)(wMulti.size() * sizeof(wchar_t));  // vectoré‡Œå«åŒç©ºç»“å°¾
 
       return RegSetValueExW_mod(
-          hKey, wValueName.empty() ? nullptr : wValueName.c_str(), Reserved,
-          dwType, reinterpret_cast<const BYTE*>(wMulti.data()), cbDataW);
+          hKey, wValueName.empty() ? nullptr : wValueName.c_str(), Reserved, dwType,
+          reinterpret_cast<const BYTE*>(wMulti.data()), cbDataW
+      );
     } else {
-      // 4) ÆäËûÀàĞÍ(Èç REG_BINARY, REG_DWORD, etc.), Ö±½ÓÔ­ÑùĞ´¼´¿É
+      // 4) å…¶ä»–ç±»å‹(å¦‚ REG_BINARY, REG_DWORD, etc.), ç›´æ¥åŸæ ·å†™å³å¯
       return RegSetValueExW_mod(
-          hKey, wValueName.empty() ? nullptr : wValueName.c_str(), Reserved,
-          dwType, lpData, cbData);
+          hKey, wValueName.empty() ? nullptr : wValueName.c_str(), Reserved, dwType, lpData, cbData
+      );
     }
   }
 }

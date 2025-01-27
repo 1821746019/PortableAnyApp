@@ -1,4 +1,4 @@
-function(update_launch_vs_json targetName exePath)
+﻿function(update_launch_vs_json targetName exePath)
     # Parse optional arguments
     set(options "")
     set(oneValueArgs "ARGS" "CURRENT_DIR")
@@ -133,7 +133,7 @@ set(dstExePath
     #[[D:\Program\Downloader\IDM\IDM_v6.38\IDMan.exe]]
     [[D:\Program\OSEnhance\RegistryFinder_2.59.0_64bit_Green\RegistryFinder.exe]]
 )
-#set(args "import #initIDM.reg")
+set(args "")
 get_filename_component(dstExeDir "${dstExePath}" DIRECTORY)
 set(appHomeDir)
 bs_add_lib(${currTarget} SHARED _.cpp)
@@ -148,6 +148,39 @@ add_custom_command(TARGET ${currTarget} POST_BUILD
     $<IF:$<BOOL:${dstExeDir}>,"${dstExeDir}/version.dll","${appHomeDir}/App/version.dll">
 )
 
+foreach(e ${extList})
+    add_custom_command(TARGET ${currTarget} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${e}>"
+        "${appHomeDir}/Ext/$<TARGET_FILE_NAME:${e}>"
+
+    )
+endforeach()
+
+# update the launch.vs.json
+update_launch_vs_json(${currTarget} ${dstExePath}
+    ARGS ${args}
+)
+
+
+set(currTarget "_practice-IDM")
+set(dstExePath
+    [[D:\Program\Downloader\IDM\IDM_v6.38_Redirect\idman.exe]]
+)
+set(args "")
+get_filename_component(dstExeDir "${dstExePath}" DIRECTORY)
+set(appHomeDir)
+bs_add_lib(${currTarget} SHARED _.cpp)
+set(extList)
+set(booter RegCore)
+set(depList ${booter} ${extList})
+target_link_libraries(${currTarget} PRIVATE ${depList})
+add_custom_command(TARGET ${currTarget} POST_BUILD
+    # copy the extBoot.dll to the target directory
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:${booter}>
+    $<IF:$<BOOL:${dstExeDir}>,"${dstExeDir}/version.dll","${appHomeDir}/App/version.dll">
+)
+# 
 foreach(e ${extList})
     add_custom_command(TARGET ${currTarget} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${e}>"

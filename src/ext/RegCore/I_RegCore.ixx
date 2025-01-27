@@ -1,4 +1,4 @@
-module;
+ï»¿module;
 #include <ntdll.h>
 export module I_RegCore;
 
@@ -28,9 +28,9 @@ void setHook() {
       {&RegQueryInfoKeyA_raw, &RegQueryInfoKeyA_mod},
       {&RegEnumKeyExW_raw, &RegEnumKeyExW_mod},
       {&RegEnumKeyExA_raw, &RegEnumKeyExA_mod},
-      /*ÉĞ²»Çå³şÊÇ·ñÒªhook£¬ÆäÄÚ²¿ÊµÏÖÎ´·¢ÏÖµ÷ÓÃkernel²ãµÄº¯Êı¶øÊÇÖ±½Óµ÷ÁËnt²ãµÄNtQueryValueKey
-       * Ó¦¸ÃÊÇºÍÇ°ÃæQueryInfo¡¢EnumKeyÒ»Ñù£¬Òª¶Ô¸ù¼ü(±ÈÈçHKEY_LOCAL_MACHINE)Query»òÕßEnumÊ±²ÅĞèÒªhook£¬
-       * Êµ²âÎŞĞèhookÄÜÕı³£»ñÈ¡SOFTWARE\Microsoft\Cryptography\MachineGuidµÄÖµ
+      /*å°šä¸æ¸…æ¥šæ˜¯å¦è¦hookï¼Œå…¶å†…éƒ¨å®ç°æœªå‘ç°è°ƒç”¨kernelå±‚çš„å‡½æ•°è€Œæ˜¯ç›´æ¥è°ƒäº†ntå±‚çš„NtQueryValueKey
+       * åº”è¯¥æ˜¯å’Œå‰é¢QueryInfoã€EnumKeyä¸€æ ·ï¼Œè¦å¯¹æ ¹é”®(æ¯”å¦‚HKEY_LOCAL_MACHINE)Queryæˆ–è€…Enumæ—¶æ‰éœ€è¦hookï¼Œ
+       * å®æµ‹æ— éœ€hookèƒ½æ­£å¸¸è·å–SOFTWARE\Microsoft\Cryptography\MachineGuidçš„å€¼
        */
       //{&RegQueryValueExW_raw, &RegQueryValueExW_mod},
       //{&RegQueryValueExA_raw, &RegQueryValueExA_mod},
@@ -41,7 +41,7 @@ void setHook() {
       //
       {&RegEnumValueW_raw, &RegEnumValueW_mod},
       {&RegEnumValueA_raw,
-       &RegEnumValueA_mod},  // Äª·Ç¾ÍÊÇµ¼ÖÂbugµÄÔ­Òò, Ö®Ç°ÓÃÁËW
+       &RegEnumValueA_mod},  // è«éå°±æ˜¯å¯¼è‡´bugçš„åŸå› , ä¹‹å‰ç”¨äº†W
       {&RegQueryValueExW_raw, &RegQueryValueExW_mod},
       {&RegQueryValueExA_raw, &RegQueryValueExA_mod},
       //{&RegSetValueExW_raw, &RegSetValueExW_mod},
@@ -56,6 +56,10 @@ extern "C" __declspec(dllexport) BOOL DllMain(HMODULE hModule,
                                               DWORD dwReason,
                                               LPVOID lpReserved) {
   if (dwReason == DLL_PROCESS_ATTACH) {
+#ifdef BS_DBG
+    //AllocConsole();
+    //freopen("CONOUT$", "w", stdout);
+#endif
     DisableThreadLibraryCalls(hModule);
     ConfigMgr::_ins_(selfDir() / (std::string(BS_TARGET_NAME) + ".toml"));
     RegHandlerMgr::_ins_();
