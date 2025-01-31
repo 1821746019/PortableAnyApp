@@ -40,8 +40,7 @@ void setHook() {
       {&RegCreateKeyExInternalA_raw, &RegCreateKeyExInternalA_mod},
       //
       {&RegEnumValueW_raw, &RegEnumValueW_mod},
-      {&RegEnumValueA_raw,
-       &RegEnumValueA_mod},  // 莫非就是导致bug的原因, 之前用了W
+      {&RegEnumValueA_raw, &RegEnumValueA_mod},  // 莫非就是导致bug的原因, 之前用了W
       {&RegQueryValueExW_raw, &RegQueryValueExW_mod},
       {&RegQueryValueExA_raw, &RegQueryValueExA_mod},
       //{&RegSetValueExW_raw, &RegSetValueExW_mod},
@@ -52,13 +51,11 @@ void setHook() {
   // NtOpenKey(nullptr, 0, nullptr);
 }
 
-extern "C" __declspec(dllexport) BOOL DllMain(HMODULE hModule,
-                                              DWORD dwReason,
-                                              LPVOID lpReserved) {
+extern "C" __declspec(dllexport) BOOL DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved) {
   if (dwReason == DLL_PROCESS_ATTACH) {
 #ifdef BS_DBG
-    //AllocConsole();
-    //freopen("CONOUT$", "w", stdout);
+    // AllocConsole();
+    // freopen("CONOUT$", "w", stdout);
 #endif
     DisableThreadLibraryCalls(hModule);
     ConfigMgr::_ins_(selfDir() / (std::string(BS_TARGET_NAME) + ".toml"));

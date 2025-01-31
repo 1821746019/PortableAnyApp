@@ -164,7 +164,40 @@ update_launch_vs_json(${currTarget} ${dstExePath}
 
 set(currTarget "_practice-IDM")
 set(dstExePath
-    [[D:\Program\Downloader\IDM\IDM_v6.38_Redirect\idman.exe]]
+    [[D:\Program\Downloader\IDM\IDM_v6.42\IDMan.exe]]
+)
+set(args "")
+get_filename_component(dstExeDir "${dstExePath}" DIRECTORY)
+set(appHomeDir)
+bs_add_lib(${currTarget} SHARED _.cpp)
+set(extList)
+set(booter RegCore)
+set(depList ${booter} ${extList})
+target_link_libraries(${currTarget} PRIVATE ${depList})
+add_custom_command(TARGET ${currTarget} POST_BUILD
+    # copy the extBoot.dll to the target directory
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:${booter}>
+    $<IF:$<BOOL:${dstExeDir}>,"${dstExeDir}/version.dll","${appHomeDir}/App/version.dll">
+)
+# 
+foreach(e ${extList})
+    add_custom_command(TARGET ${currTarget} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${e}>"
+        "${appHomeDir}/Ext/$<TARGET_FILE_NAME:${e}>"
+
+    )
+endforeach()
+
+# update the launch.vs.json
+update_launch_vs_json(${currTarget} ${dstExePath}
+    ARGS ${args}
+)
+
+
+set(currTarget "_practice-wps")
+set(dstExePath
+    [[D:\Program Files\WPS\WPS_Portable\App\wps.exe]]
 )
 set(args "")
 get_filename_component(dstExeDir "${dstExePath}" DIRECTORY)

@@ -8,8 +8,7 @@ import AppRegHive;
 
 export class RegHandler_Virtualize : public RegHandler_B {
  public:
-  LSTATUS
-  RegCreateKeyExInternalW(
+  LSTATUS RegCreateKeyExInternalW(
       HKEY hKey,
       LPCWSTR lpSubKey,
       DWORD Reserved,
@@ -45,8 +44,8 @@ export class RegHandler_Virtualize : public RegHandler_B {
     // 返回原始状态（如果没有遇到 NAME NOT FOUND）
     return status;
   }
-  LSTATUS RegOpenKeyExW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult)
-      override {
+  LSTATUS
+  RegOpenKeyExW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult) override {
     if (rootKeyMap.contains(hKey)) {
       HKEY hKey_new = rootKeyMap.at(hKey);
       LSTATUS status = RegOpenKeyExW_raw(hKey_new, lpSubKey, ulOptions, samDesired, phkResult);

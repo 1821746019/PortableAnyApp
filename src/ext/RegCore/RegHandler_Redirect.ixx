@@ -15,7 +15,7 @@ bool isNeedRedirection(const std::wstring& path) {
   bool ret = false;
   decltype(regGuardConfig.open(path, nullptr)) context = nullptr;
   auto key = regGuardConfig.open(path, &context);
-  if ((key && key->keyInfo->redirect)||context&&context->keyInfo->redirect) {
+  if ((key && key->keyInfo->redirect) || context && context->keyInfo->redirect) {
     ret = true;
   }
   return ret;
@@ -83,8 +83,8 @@ export class RegHandler_Redirect : public RegHandler_B {
         lpdwDisposition, lpReserved
     );
   };
-  LSTATUS RegOpenKeyExW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult)
-      override {
+  LSTATUS
+  RegOpenKeyExW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult) override {
     std::wstring path_old = abstractNonRootFromAbsRegPath(GetKeyPath(hKey));
     std::wstring path_old_full = path_old + L"\\" + (lpSubKey ? lpSubKey : L"");
     bool isIncluded = isInIncluded(path_old_full);

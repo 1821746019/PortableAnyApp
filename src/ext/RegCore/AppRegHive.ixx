@@ -1,4 +1,4 @@
-module;
+ï»¿module;
 
 #include <Windows.h>
 
@@ -7,17 +7,70 @@ export module AppRegHive;
 import std;
 import selfInfo;
 import reg_common;
+namespace fs = std::filesystem;
 
-export {
-  HKEY getAppHiveRootKey() {
-    static HKEY ret = [] {
-      HKEY ret;
-      auto status = RegLoadAppKeyW((selfDir() / "AppRegHive").c_str(), &ret,
-                                   KEY_ALL_ACCESS, REG_PROCESS_APPKEY, 0);
+class AppHiveMgr {
+  AppHiveMgr(const AppHiveMgr&) = delete;
+  AppHiveMgr& operator=(const AppHiveMgr&) = delete;
+  AppHiveMgr(AppHiveMgr&&) = delete;
+  AppHiveMgr& operator=(AppHiveMgr&&) = delete;
+
+  AppHiveMgr() {}
+  HKEY hKey_ = nullptr;
+  std::mutex mtx_;
+  inline static std::unique_ptr<AppHiveMgr> ins_;
+  void hotReloadAutomatically() {}
+
+ public:
+  HKEY hKey() {
+    std::lock_guard<std::mutex> lock(mtx_);
+    if (!hKey_) {
+      // å¤åˆ¶åˆ° ç³»ç»Ÿtemp/exeå+exeè·¯å¾„hash é¿å…åŸAppHiveè¢«ç³»ç»Ÿé”ä½æ— æ³•æ”¹åŠ¨
+      auto exePath = selfExePath();
+      fs::path dstDir =
+          fs::temp_directory_path() / (exePath.filename().wstring() + L"_" +
+                                       std::to_wstring(std::hash<std::wstring>{}(exePath.wstring())));
+      fs::path dstPath = dstDir / "AppRegHive";
+      std::error_code ec;
+      fs::create_directory(dstDir, ec);
+      if (ec) {
+        std::cerr << "create_directory failed: " << ec.message() << std::endl;
+      }
+
+      fs::copy_file(selfDir() / "AppRegHive", dstPath, fs::copy_options::overwrite_existing);
+
+      auto status = RegLoadAppKeyW(dstPath.c_str(), &hKey_, KEY_ALL_ACCESS, REG_PROCESS_APPKEY, 0);
       if (status != ERROR_SUCCESS) {
         throw std::runtime_error(
             "failed to load AppRegHive. Please check if it exists in the same "
-            "dir of the dll");
+            "dir of the dll"
+        );
+      }
+    }
+
+    return hKey_;
+  }
+  static AppHiveMgr& _ins_() {
+    if (!ins_) {
+      ins_ = std::unique_ptr<AppHiveMgr>(new AppHiveMgr());
+    }
+    return *ins_;
+  }
+};
+
+export {
+  HKEY getAppHiveRootKey() {
+    //return AppHiveMgr::_ins_().hKey();
+
+    static HKEY ret = [] {
+      HKEY ret;
+      auto status =
+          RegLoadAppKeyW((selfDir() / "AppRegHive").c_str(), &ret, KEY_ALL_ACCESS, REG_PROCESS_APPKEY, 0);
+      if (status != ERROR_SUCCESS) {
+        throw std::runtime_error(
+            "failed to load AppRegHive. Please check if it exists in the same "
+            "dir of the dll"
+        );
       }
       return ret;
     }();
@@ -29,41 +82,42 @@ export {
   };
   const std::unordered_map<HKEY, HKEY> rootKeyMap = [] {
     std::unordered_map<HKEY, HKEY> ret;
-    HKEY hKeyMachine = nullptr, hKeyUser = nullptr, hKeyUsers = nullptr,
-         hKeyClasses = nullptr, hKeyCurrentConfig = nullptr;
-    // DWORD disposition;  // ½ÓÊÕ¼üµÄ´´½¨/´ò¿ª×´Ì¬
+    HKEY hKeyMachine = nullptr, hKeyUser = nullptr, hKeyUsers = nullptr, hKeyClasses = nullptr,
+         hKeyCurrentConfig = nullptr;
+    // DWORD disposition;  // æ¥æ”¶é”®çš„åˆ›å»º/æ‰“å¼€çŠ¶æ€
 
-    // ´ò¿ª»ò´´½¨ HKEY_LOCAL_MACHINE
-    LSTATUS resultMachine =
-        RegCreateKeyExW(getAppHiveRootKey(),
-                        L"HKEY_LOCAL_MACHINE",    // ×Ó¼üÃû³Æ
-                        0,                        // ±£Áô£¬Ò»°ãÌî0
-                        nullptr,                  // ÀàÃû£¨¿ÉÌî¿Õ£©
-                        REG_OPTION_NON_VOLATILE,  // ·ÇÒ×Ê§ĞÔ
-                        KEY_ALL_ACCESS,           // È«È¨ÏŞ£¬·½±ã¶ÁĞ´
-                        nullptr,                  // °²È«ÊôĞÔ
-                        &hKeyMachine,             // ·µ»Ø´´½¨ºÃµÄ×Ó¼ü
-                        nullptr                   // ²»¹ØĞÄÊÇ·ñÒÑ´æÔÚ
-        );
+    // æ‰“å¼€æˆ–åˆ›å»º HKEY_LOCAL_MACHINE
+    LSTATUS resultMachine = RegCreateKeyExW(
+        getAppHiveRootKey(),
+        L"HKEY_LOCAL_MACHINE",    // å­é”®åç§°
+        0,                        // ä¿ç•™ï¼Œä¸€èˆ¬å¡«0
+        nullptr,                  // ç±»åï¼ˆå¯å¡«ç©ºï¼‰
+        REG_OPTION_NON_VOLATILE,  // éæ˜“å¤±æ€§
+        KEY_ALL_ACCESS,           // å…¨æƒé™ï¼Œæ–¹ä¾¿è¯»å†™
+        nullptr,                  // å®‰å…¨å±æ€§
+        &hKeyMachine,             // è¿”å›åˆ›å»ºå¥½çš„å­é”®
+        nullptr                   // ä¸å…³å¿ƒæ˜¯å¦å·²å­˜åœ¨
+    );
 
-    // ´ò¿ª»ò´´½¨ HKEY_CURRENT_USER
+    // æ‰“å¼€æˆ–åˆ›å»º HKEY_CURRENT_USER
     LSTATUS resultUser = RegCreateKeyExW(
-        getAppHiveRootKey(), L"HKEY_CURRENT_USER", 0, nullptr,
-        REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, nullptr, &hKeyUser, nullptr);
-    LSTATUS resultClasses =
-        RegCreateKeyExW(getAppHiveRootKey(), L"HKEY_CLASSES_ROOT", 0, nullptr,
-                        REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, nullptr,
-                        &hKeyClasses, nullptr);
+        getAppHiveRootKey(), L"HKEY_CURRENT_USER", 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS,
+        nullptr, &hKeyUser, nullptr
+    );
+    LSTATUS resultClasses = RegCreateKeyExW(
+        getAppHiveRootKey(), L"HKEY_CLASSES_ROOT", 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS,
+        nullptr, &hKeyClasses, nullptr
+    );
     LSTATUS resultUsers = RegCreateKeyExW(
-        getAppHiveRootKey(), L"HKEY_USERS", 0, nullptr, REG_OPTION_NON_VOLATILE,
-        KEY_ALL_ACCESS, nullptr, &hKeyUsers, nullptr);
-    LSTATUS resultCurrentConfig =
-        RegCreateKeyExW(getAppHiveRootKey(), L"HKEY_CURRENT_CONFIG", 0, nullptr,
-                        REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, nullptr,
-                        &hKeyCurrentConfig, nullptr);
-    if (resultMachine != ERROR_SUCCESS || resultUser != ERROR_SUCCESS ||
-        resultClasses != ERROR_SUCCESS || resultUsers != ERROR_SUCCESS ||
-        resultCurrentConfig != ERROR_SUCCESS) {
+        getAppHiveRootKey(), L"HKEY_USERS", 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, nullptr,
+        &hKeyUsers, nullptr
+    );
+    LSTATUS resultCurrentConfig = RegCreateKeyExW(
+        getAppHiveRootKey(), L"HKEY_CURRENT_CONFIG", 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS,
+        nullptr, &hKeyCurrentConfig, nullptr
+    );
+    if (resultMachine != ERROR_SUCCESS || resultUser != ERROR_SUCCESS || resultClasses != ERROR_SUCCESS ||
+        resultUsers != ERROR_SUCCESS || resultCurrentConfig != ERROR_SUCCESS) {
       if (hKeyMachine)
         RegCloseKey(hKeyMachine);
       if (hKeyUser)

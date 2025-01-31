@@ -12,15 +12,22 @@ export {
   constexpr int REG_PREFIX_LEN = std::size(REG_PREFIX) - 1;
 
   std::wstring GetKeyPath(HKEY hKey) {
-    std::unordered_map<HKEY, std::wstring> excluded({
+    static std::unordered_map<HKEY, std::wstring> excluded({
         {HKEY_LOCAL_MACHINE, L"HKEY_LOCAL_MACHINE"},
         {HKEY_CURRENT_USER, L"HKEY_CURRENT_USER"},
         {HKEY_USERS, L"HKEY_USERS"},
         {HKEY_CLASSES_ROOT, L"HKEY_CLASSES_ROOT"},
         {HKEY_CURRENT_CONFIG, L"HKEY_CURRENT_CONFIG"},
+        {HKEY_DYN_DATA, L"HKEY_DYN_DATA"},
+        {HKEY_CURRENT_USER_LOCAL_SETTINGS, L"HKEY_CURRENT_USER_LOCAL_SETTINGS"},
+        ////最后这两个是必须的，防止调用方传入该hkey, NtQueryKey失败导致异常抛出(他妈VS定位throw
+        // runtime_error也太不准了，debug几小时最后无意step-in了几步才发现是GeyKeyPath抛出的
+        //  坑啊 Frames below may be incorrect and/or missing, no symbols loaded for vcruntime140d.dll
+        //  加载vcruntime140d.dll.pdb解决runtime_error throw位置定位不准的问题
     });
-    if (excluded.contains(hKey)) {
-      return excluded.at(hKey);
+
+    if (auto it = excluded.find(hKey); it != excluded.end()) {
+      return it->second;
     };
     // 初始缓冲区大小
     ULONG bufferSize = 0;

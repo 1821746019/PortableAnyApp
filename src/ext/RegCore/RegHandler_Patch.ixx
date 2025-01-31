@@ -8,14 +8,12 @@ import func2hook.kernel.raw;
 import AppRegHive;
 import reg_common;
 
-
 export class RegHandler_Patch : public RegHandler_B {
  public:
   //--------------------------------------------------------------------------------
   // RegCreateKeyExInternalW
   //--------------------------------------------------------------------------------
-  LSTATUS
-  RegCreateKeyExInternalW(
+  LSTATUS RegCreateKeyExInternalW(
       HKEY hKey,
       LPCWSTR lpSubKey,
       DWORD Reserved,
@@ -38,8 +36,8 @@ export class RegHandler_Patch : public RegHandler_B {
   //--------------------------------------------------------------------------------
   // RegOpenKeyExW
   //--------------------------------------------------------------------------------
-  LSTATUS RegOpenKeyExW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult)
-      override {
+  LSTATUS
+  RegOpenKeyExW(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired, PHKEY phkResult) override {
     // 直接调用原始的 raw
     return RegOpenKeyExW_raw(hKey, lpSubKey, ulOptions, samDesired, phkResult);
   }
@@ -240,8 +238,7 @@ export class RegHandler_Patch : public RegHandler_B {
   //--------------------------------------------------------------------------------
   // RegSetValueExW
   //--------------------------------------------------------------------------------
-  LSTATUS
-  RegSetValueExW(
+  LSTATUS RegSetValueExW(
       HKEY hKey,
       LPCWSTR lpValueName,
       DWORD Reserved,

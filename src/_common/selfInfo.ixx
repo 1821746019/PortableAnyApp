@@ -1,22 +1,23 @@
-module;
+ï»¿module;
 #include <Windows.h>
 export module selfInfo;
 
 import std;
-//using namespace std;
+// using namespace std;
 
 namespace fs = std::filesystem;
 
-//extern "C" BOOL DllMain(HMODULE hMoudle, DWORD dwReason, LPVOID lpReserved);
+// extern "C" BOOL DllMain(HMODULE hMoudle, DWORD dwReason, LPVOID lpReserved);
 export fs::path selfPath() {
   static const fs::path ret = [] {
     HMODULE hModule = nullptr;
-    // Ê¹ÓÃ GetModuleHandleExW
-    // »ñÈ¡µ±Ç°Ä£¿é¾ä±ú£¬´«Èë±¾º¯ÊıµÄµØÖ·£¬±¾ixxÈô±»dllÁ´½ÓÔò»á»ñµÃdllµÄ¾ä±ú,
-    // Èô±»exeÁ´½ÓÔò»á»ñµÃexeµÄ¾ä±ú
-    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                               GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                           reinterpret_cast<LPCWSTR>(&selfPath), &hModule)) {
+    // ä½¿ç”¨ GetModuleHandleExW
+    // è·å–å½“å‰æ¨¡å—å¥æŸ„ï¼Œä¼ å…¥æœ¬å‡½æ•°çš„åœ°å€ï¼Œæœ¬ixxè‹¥è¢«dllé“¾æ¥åˆ™ä¼šè·å¾—dllçš„å¥æŸ„,
+    // è‹¥è¢«exeé“¾æ¥åˆ™ä¼šè·å¾—exeçš„å¥æŸ„
+    if (GetModuleHandleExW(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCWSTR>(&selfPath), &hModule
+        )) {
       wchar_t buf[MAX_PATH];
       GetModuleFileNameW(hModule, buf, std::size(buf));
 
@@ -31,3 +32,11 @@ export fs::path selfPath() {
 export fs::path selfDir() {
   return selfPath().parent_path();
 };
+export fs::path selfExePath() {
+  wchar_t exe_path2dir[MAX_PATH];
+  GetModuleFileNameW(nullptr, exe_path2dir, std::size(exe_path2dir));
+  return exe_path2dir;
+}
+export fs::path selfExeDir() {
+  return selfExePath().parent_path();
+}

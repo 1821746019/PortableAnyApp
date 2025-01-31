@@ -3,6 +3,7 @@
 #include <Windows.h>
 export module RegHandler_B;
 import func2hook.kernel.raw;
+import std;
 export {
   class RegHandler_B {
    public:
@@ -58,7 +59,13 @@ export {
         LPBYTE lpData,
         LPDWORD lpcbData
     ) {
-      return RegQueryValueExW_raw(hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
+      if (!hKey)
+        return ERROR_INVALID_HANDLE;
+      // if (!lpValueName)
+      //   return ERROR_INVALID_PARAMETER;
+      return RegQueryValueExW_raw(
+          hKey, lpValueName ? lpValueName : L"", lpReserved, lpType, lpData, lpcbData
+      );
     }
     virtual LSTATUS RegEnumKeyExW(
         HKEY hKey,
@@ -70,7 +77,9 @@ export {
         LPDWORD lpcClass,
         PFILETIME lpftLastWriteTime
     ) {
-      return RegEnumKeyExW_raw(hKey, dwIndex, lpName, lpcName, lpReserved, lpClass, lpcClass, lpftLastWriteTime);
+      return RegEnumKeyExW_raw(
+          hKey, dwIndex, lpName, lpcName, lpReserved, lpClass, lpcClass, lpftLastWriteTime
+      );
     }
     virtual LSTATUS RegEnumValueW(
         HKEY hkey,
@@ -82,7 +91,9 @@ export {
         LPBYTE lpData,
         LPDWORD lpcbData
     ) {
-      return RegEnumValueW_raw(hkey, dwIndex, lpValueName, lpcchValueName, lpReserved, lpType, lpData, lpcbData);
+      return RegEnumValueW_raw(
+          hkey, dwIndex, lpValueName, lpcchValueName, lpReserved, lpType, lpData, lpcbData
+      );
     }
     virtual LSTATUS RegSetValueExW(
         HKEY hKey,
