@@ -9,7 +9,7 @@
       "installDir": "${sourceDir}/install/${presetName}",
       "cacheVariables": {
 
-        "CMAKE_TOOLCHAIN_FILE": "D:\\environment\\c++\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
+        "CMAKE_TOOLCHAIN_FILE": "D:\\environment\\cpp\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake",
         "CMAKE_INCLUDE_CURRENT_DIR": "ON",
         //"CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build/${presetName}/bin",
         //"CMAKE_LIBRARY_OUTPUT_DIRECTORY": "${sourceDir}/build/${presetName}/bin",

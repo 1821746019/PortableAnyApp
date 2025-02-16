@@ -13,7 +13,8 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
-
+#解决Qt app定义了_UTF8而std模块没有导致有：Possible incompatible environment while importing module 'std': _UTF8 is defined in current command line and not in module command line
+add_compile_options(-D_UTF8)
 add_compile_definitions($<$<CONFIG:Debug>:BS_DBG>)
 #if("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
 if(MSVC)
@@ -41,16 +42,18 @@ endif()
 # vcpkg config
 
 #set(VCPKG_OVERLAY_TRIPLETS "x64-win-static")
+# pkg dep
+
+find_package(Qt6 COMPONENTS Core Network Widgets  Gui  REQUIRED)
+#detours
+find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
+find_library(DETOURS_LIBRARY detours REQUIRED)
 
 # Add source to this project's executable.
 add_subdirectory(external)
 link_libraries(std)
 
-# pkg dep
-find_package(Qt5 COMPONENTS Widgets Core Gui REQUIRED)
-#detours
-find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
-find_library(DETOURS_LIBRARY detours REQUIRED)
+
 
 
 add_subdirectory(src)

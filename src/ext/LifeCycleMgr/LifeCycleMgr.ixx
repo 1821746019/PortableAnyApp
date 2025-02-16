@@ -1,4 +1,4 @@
-module;
+﻿module;
 #include <Windows.h>
 #include <toml++/toml.hpp>
 export module _;
@@ -66,7 +66,7 @@ bool execFile(const fs::path& filePath,
 class ConfigMgr {
   string configContent_;
   toml::table config_;
-  set<wstring> domainBlockList_;
+
   void initFinalConfigContent() {
     fs::path config_path =
         (selfDir / fs::path(__FILE__).filename().replace_extension(".toml"));
@@ -79,12 +79,7 @@ class ConfigMgr {
     configContent_ =
         string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
   }
-  void updateDomainBlockList() {
-    domainBlockList_.clear();
-    for (auto& e : *config_["domainBlockList"].as_array()) {
-      domainBlockList_.emplace(e.value<wstring>().value());
-    }
-  }
+
   ConfigMgr() {
     initFinalConfigContent();
     config_ = toml::parse(configContent_);

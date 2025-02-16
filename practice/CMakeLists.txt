@@ -226,3 +226,13 @@ endforeach()
 update_launch_vs_json(${currTarget} ${dstExePath}
     ARGS ${args}
 )
+
+# get all the .cmake files in the targets directory
+#file(GLOB targetsCMake RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.cmake")
+file(GLOB targetsCMake RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/targets" "${CMAKE_CURRENT_SOURCE_DIR}/targets/*.cmake")
+
+message("targetsCMake: ${targetsCMake}")
+foreach(cmakeFile ${targetsCMake})
+
+    include("${CMAKE_CURRENT_SOURCE_DIR}/targets/${cmakeFile}")
+endforeach()

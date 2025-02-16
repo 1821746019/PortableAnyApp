@@ -3,7 +3,7 @@
 #include <Psapi.h>
 #include <toml++/toml.h>
 // #include <spdlog/sp>
-export module _;
+export module allocConsole;
 import std;
  //import std.compat;
 import selfInfo;
@@ -13,7 +13,7 @@ namespace fs = filesystem;
 #pragma comment(lib, "psapi.lib")
 
 // 函数：创建并重定向控制台
-void CreateAndRedirectConsole() {
+export void CreateAndRedirectConsole() {
   // 获取当前控制台窗口的句柄
   HWND hConsole = GetConsoleWindow();
 

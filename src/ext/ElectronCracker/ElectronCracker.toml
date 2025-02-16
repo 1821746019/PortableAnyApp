@@ -1,0 +1,8 @@
+﻿targetFileNames=[
+	"main.js",
+	"index.js"
+]
+
+suffixesWithoutExtName=[' - Copy', '.default']
+
+checkpoints=[1]

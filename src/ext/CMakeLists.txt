@@ -18,7 +18,7 @@ foreach(DIR ${file_list})
     endif()
 endforeach()
 
-
+# 每个文件夹为一个target
 foreach(i ${dir_list})
     bs_add_lib(${i} SHARED ${i}/*.ixx ${i}/*.cpp)
     set_target_properties(${i} PROPERTIES FOLDER "ext")
@@ -51,17 +51,7 @@ foreach(e ${all_targets})
 endforeach()
 
 
-add_custom_command(TARGET allocConsole POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/allocConsole.dll
-    "D:/Program Files (x86)/VMapp/Genymotion/Ext")
 
-
-
-set(curr_target HijackDnsQuery)
-add_custom_command(TARGET ${curr_target} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${curr_target}>"
-    "D:/Program/Productivity/Utils/PixPin/v1.9.5/App/version.dll"
-)
 
 set(curr_target  RegCore)
 #bs_add_lib(${curr_target} SHARED *.ixx)

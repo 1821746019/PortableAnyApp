@@ -1,4 +1,4 @@
-module;
+﻿module;
 #include <ws2tcpip.h>
 #include <Windows.h>
 #include <WinDNS.h>
@@ -16,7 +16,7 @@ namespace fs = filesystem;
 class ConfigMgr {
   string configContent_;
   toml::table config_;
-  set<wstring> domainBlockList_;
+  set<wstring> domainsBlocked;
   void initFinalConfigContent() {
     fs::path config_path =
         (selfDir() / fs::path(__FILE__).filename().replace_extension(".toml"));
@@ -30,9 +30,9 @@ class ConfigMgr {
         string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
   }
   void updateDomainBlockList() {
-    domainBlockList_.clear();
+    domainsBlocked.clear();
     for (auto& e : *config_["domainBlockList"].as_array()) {
-      domainBlockList_.emplace(e.value<wstring>().value());
+      domainsBlocked.emplace(e.value<wstring>().value());
     }
   }
   ConfigMgr() {
@@ -52,7 +52,7 @@ class ConfigMgr {
   }
 
   bool isNeedBlocking(const wstring& domain) const {
-    return domainBlockList_.contains(domain);
+    return domainsBlocked.contains(domain);
   }
 };
 
