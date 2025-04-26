@@ -74,7 +74,7 @@ export class RegHandler_Redirect : public RegHandler_B {
 
     if (isNeedRedirection(path_old_full)) {
       return RegCreateKeyExInternalW_raw(
-          getAppHiveRootKey(), path_old_full.data(), Reserved, lpClass, dwOptions, samDesired,
+          getCachedAppHiveRootKey(), path_old_full.data(), Reserved, lpClass, dwOptions, samDesired,
           lpSecurityAttributes, phkResult, lpdwDisposition, lpReserved
       );
     }
@@ -90,7 +90,7 @@ export class RegHandler_Redirect : public RegHandler_B {
     bool isIncluded = isInIncluded(path_old_full);
 
     if (isNeedRedirection(path_old_full)) {
-      return RegOpenKeyExW_raw(getAppHiveRootKey(), path_old_full.data(), ulOptions, samDesired, phkResult);
+      return RegOpenKeyExW_raw(getCachedAppHiveRootKey(), path_old_full.data(), ulOptions, samDesired, phkResult);
     }
     return RegOpenKeyExW_raw(hKey, lpSubKey, ulOptions, samDesired, phkResult);
   };

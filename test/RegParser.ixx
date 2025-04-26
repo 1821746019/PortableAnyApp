@@ -12,7 +12,7 @@ class RegParser {
   RegParser(const wstring& regContetn) {}
 };
 
-HKEY getAppHiveRootKey() {
+HKEY getCachedAppHiveRootKey() {
   static HKEY ret = [] {
     HKEY ret;
     auto status = RegLoadAppKeyW(
@@ -30,7 +30,7 @@ HKEY getAppHiveRootKey() {
 extern "C" int main() {
   try {
     // 1. 获取 AppHive 句柄
-    HKEY hAppHive = getAppHiveRootKey();
+    HKEY hAppHive = getCachedAppHiveRootKey();
     HKEY hMachine = nullptr;
     // 2. 测试创建一个名为 "TestKey" 的子键
     LONG rootStatus = RegCreateKeyExW(hAppHive,

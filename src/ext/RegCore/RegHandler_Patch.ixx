@@ -64,7 +64,7 @@ export class RegHandler_Patch : public RegHandler_B {
 
     HKEY hVirtualSubKey = nullptr;
     LSTATUS status = RegOpenKeyExW_raw(
-        getAppHiveRootKey(),
+        getCachedAppHiveRootKey(),
         path_old.c_str(),  // 这里可以带"\\"分隔的多级路径
         0,
         KEY_READ,  // 根据需要可更改权限
@@ -107,7 +107,7 @@ export class RegHandler_Patch : public RegHandler_B {
 
     // 先打开虚拟子键
     HKEY hVirtualSubKey = nullptr;
-    LSTATUS status = RegOpenKeyExW_raw(getAppHiveRootKey(), path_old.c_str(), 0, KEY_READ, &hVirtualSubKey);
+    LSTATUS status = RegOpenKeyExW_raw(getCachedAppHiveRootKey(), path_old.c_str(), 0, KEY_READ, &hVirtualSubKey);
 
     if (status == ERROR_SUCCESS) {
       // 在虚拟子键上查询值 lpValueName（注意不再拼接 "\"）
@@ -147,7 +147,7 @@ export class RegHandler_Patch : public RegHandler_B {
       // try to query from the AppRegHive first by opening the subkey
       HKEY hVirtualSubKey = nullptr;
       LSTATUS statusOpen =
-          RegOpenKeyExW_raw(getAppHiveRootKey(), path_old.c_str(), 0, KEY_READ, &hVirtualSubKey);
+          RegOpenKeyExW_raw(getCachedAppHiveRootKey(), path_old.c_str(), 0, KEY_READ, &hVirtualSubKey);
 
       if (statusOpen == ERROR_SUCCESS) {
         // 在虚拟子键上枚举 dwIndex
@@ -205,7 +205,7 @@ export class RegHandler_Patch : public RegHandler_B {
       // 先尝试枚举虚拟表
       HKEY hVirtualSubKey = nullptr;
       LSTATUS statusOpen =
-          RegOpenKeyExW_raw(getAppHiveRootKey(), path_old.c_str(), 0, KEY_READ, &hVirtualSubKey);
+          RegOpenKeyExW_raw(getCachedAppHiveRootKey(), path_old.c_str(), 0, KEY_READ, &hVirtualSubKey);
 
       if (statusOpen == ERROR_SUCCESS) {
         LSTATUS statusEnum = RegEnumValueW_raw(
@@ -254,7 +254,7 @@ export class RegHandler_Patch : public RegHandler_B {
 
     // 尝试使用内部API打开或创建注册表项
     LSTATUS status = RegCreateKeyExInternalW_raw(
-        getAppHiveRootKey(),      // 根键
+        getCachedAppHiveRootKey(),      // 根键
         path_old.c_str(),         // 子键路径
         0,                        // 保留参数，通常为0
         nullptr,                  // lpClass, 这里假设为空

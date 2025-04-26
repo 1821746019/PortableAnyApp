@@ -4,6 +4,7 @@ export module I_RegCore;
 
 import std;
 import Hooker;
+import AppRegHive;
 import func2hook;
 import func2hook.kernel;
 import func2hook.kernel.raw;
@@ -52,19 +53,21 @@ void setHook() {
 }
 
 extern "C" __declspec(dllexport) BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved) {
-//  if (dwReason == DLL_PROCESS_ATTACH) {
-//#ifdef BS_DBG
-//    // AllocConsole();
-//    // freopen("CONOUT$", "w", stdout);
-//#endif
-//    DisableThreadLibraryCalls(hModule);
-//    try {
-//      ConfigMgr::_ins_(selfDir() / (std::string(BS_TARGET_NAME) + ".toml"));
-//      RegHandlerMgr::_ins_();
-//      //setHook();
-//    } catch (const std::exception& e) {
-//      MessageBoxA(nullptr, e.what(), "Exception occured", MB_ICONERROR);
-//    }
-//  }
+  if (dwReason == DLL_PROCESS_ATTACH) {
+#ifdef BS_DBG
+    // AllocConsole();
+    // freopen("CONOUT$", "w", stdout);
+#endif
+    DisableThreadLibraryCalls(hModule);
+    // 子进程不进行hook，因为hive只能被一个进程加载
+
+    try {
+      ConfigMgr::_ins_(selfDir() / (std::string(BS_TARGET_NAME) + ".toml"));
+      RegHandlerMgr::_ins_();
+      // setHook();
+    } catch (const std::exception& e) {
+      MessageBoxA(nullptr, e.what(), "Exception occured", MB_ICONERROR);
+    }
+  }
   return TRUE;
 }

@@ -62,29 +62,27 @@ export {
   HKEY getCachedAppHiveRootKey() {
     // return AppHiveMgr::_ins_().hKey();
 
-    static HKEY hiveRootKey = [] {
+    static HKEY ret = [] {
       HKEY ret;
       fs::path hivePath = selfDir() / "AppRegHive";
-      // 使用filesystem_error提供更详细的错误信息
       if (!fs::exists(hivePath)) {
-        throw fs::filesystem_error(
-            "AppRegHive not found", hivePath, std::make_error_code(std::errc::no_such_file_or_directory)
-        );
+        throw std::runtime_error("Failed to load AppRegHive: AppRegHive Not Found");
       }
       auto status = RegLoadAppKeyW(hivePath.c_str(), &ret, KEY_ALL_ACCESS, REG_PROCESS_APPKEY, 0);
       if (status != ERROR_SUCCESS) {
-        throw std::runtime_error("Failed to load AppRegHive. Please check if it has been loaded in other exe"
+        throw std::runtime_error(
+            "Failed to load AppRegHive. Please check if it has been loaded in other exe"
         );
       }
       return ret;
     }();
-    return hiveRootKey;
+    return ret;
   };
   std::wstring getAppRegHiveRegPath() {
     static std::wstring ret = GetKeyPath(getCachedAppHiveRootKey());
     return ret;
   };
-  auto getRootKeyMap() {
+  const std::unordered_map<HKEY, HKEY> rootKeyMap = [] {
     std::unordered_map<HKEY, HKEY> ret;
     HKEY hKeyMachine = nullptr, hKeyUser = nullptr, hKeyUsers = nullptr, hKeyClasses = nullptr,
          hKeyCurrentConfig = nullptr;
@@ -135,10 +133,5 @@ export {
     ret[HKEY_USERS] = hKeyUsers;
     ret[HKEY_CURRENT_CONFIG] = hKeyCurrentConfig;
     return ret;
-  }
-  inline auto getCachedRootKeyMap() {
-    static const std::unordered_map<HKEY, HKEY> rootKeyMap = getRootKeyMap();
-    return rootKeyMap;
-    ;
-  }
+  }();
 }

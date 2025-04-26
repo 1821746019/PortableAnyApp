@@ -5,7 +5,7 @@ import std;
 import RegHandler_B;
 import func2hook.kernel.raw;
 import AppRegHive;
-
+#define rootKeyMap getCachedRootKeyMap()
 export class RegHandler_Virtualize : public RegHandler_B {
  public:
   LSTATUS RegCreateKeyExInternalW(
