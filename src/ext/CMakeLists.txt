@@ -1,10 +1,12 @@
 ﻿
 set(lib_name ext_common)
-bs_add_lib(${lib_name} OBJECT *.ixx)
+bs_add_lib(${lib_name} STATIC "_common/*.ixx")
+
+#set(lib_name extra)
 
 add_library(pch STATIC pch.cpp)
 target_precompile_headers(pch PRIVATE pch.cpp)
-link_libraries(${lib_name} Hooker pch)
+link_libraries(${lib_name} ext_common Hooker pch)
 
 ### 每个文件夹为一个target
 # 获取当前目录的所有文件和文件夹的名字
@@ -13,15 +15,20 @@ file(GLOB file_list RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_
 # 过滤出文件夹
 set(dir_list "")
 foreach(DIR ${file_list})
-    if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${DIR})
-        list(APPEND dir_list ${DIR})
+  if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${DIR})
+    #排除前缀为_的
+    if(DIR MATCHES "^_")
+      continue()
     endif()
+    list(APPEND dir_list ${DIR})
+  endif()
 endforeach()
 
-# 每个文件夹为一个target
+# 每个文件夹(除前缀为_的)为一个target
 foreach(i ${dir_list})
-    bs_add_lib(${i} SHARED ${i}/*.ixx ${i}/*.cpp)
-    set_target_properties(${i} PROPERTIES FOLDER "ext")
+
+  bs_add_lib(${i} SHARED ${i}/*.ixx ${i}/*.cpp)
+  set_target_properties(${i} PROPERTIES FOLDER "ext")
 endforeach()
 
 # 针对每个target配置
@@ -62,4 +69,5 @@ bcrypt
 wbemuuid)
 target_link_libraries(${curr_target} PRIVATE winreg Hooker)
 
-#set(curr_target UniqueWindowGroup)
+set(curr_target fs_core)
+target_link_libraries(${curr_target} PRIVATE ntdll MyLib Hooker)

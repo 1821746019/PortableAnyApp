@@ -86,25 +86,7 @@ update_launch_vs_json(${currTarget} ${dstExePath}
 
 
 
-set(currTarget "PixpinPractice")
-set(appHomeDir "D:/Program/Productivity/Utils/PixPin/v1.9.5")
-bs_add_lib(${currTarget} SHARED _.cpp)
-set(extList RegCore)
-set(depList extBoot ${extList})
-target_link_libraries(${currTarget} PRIVATE ${depList})
-add_custom_command(TARGET ${currTarget} POST_BUILD
-    # copy the extBoot.dll to the target directory
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:extBoot>
-    "${appHomeDir}/App/version.dll"
 
-)
-foreach(e ${extList})
-    add_custom_command(TARGET ${currTarget} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:${e}>"
-        "${appHomeDir}/Ext/$<TARGET_FILE_NAME:${e}>"
-
-    )
-endforeach()
 
 set(currTarget "VSCodePractice")
 set(dstExeDir "D:/environment/IDE/VSCode/VSCode_v1.83_32Bit_")

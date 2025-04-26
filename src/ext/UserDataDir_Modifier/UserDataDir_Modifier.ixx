@@ -1,0 +1,262 @@
+﻿module;
+#include <Windows.h>
+#include <ShlObj.h>
+#include <DbgHelp.h>
+#include <toml++/toml.hpp>
+#pragma comment(lib, "dbghelp.lib")
+export module UserDataDir_Modifier;
+import std;
+import Hooker;
+import selfInfo;
+import strUtils;
+import my_converter.str;
+using namespace std;
+namespace fs = filesystem;
+#define configMgr ConfigMgr::_ins_()
+
+const wstring& defautlConfig =
+    LR"(
+# EXE_DIR is a bult-in variable
+[AppData]
+only_self_exe = true
+all= '''${EXE_DIR}\..\Data'''
+Roaming = '''${EXE_DIR}\..\Data\Roaming'''
+#Local = '''${EXE_DIR}\..\Data\Local'''
+)";
+
+std::wstring GetCallingModule() {
+  // 初始化符号处理
+  SymInitialize(GetCurrentProcess(), NULL, TRUE);
+
+  // 准备上下文
+  CONTEXT context = {};
+  context.ContextFlags = CONTEXT_FULL;
+  RtlCaptureContext(&context);
+
+  // 准备栈帧
+  STACKFRAME64 stackFrame = {};
+#ifdef _M_IX86
+  stackFrame.AddrPC.Offset = context.Eip;
+  stackFrame.AddrPC.Mode = AddrModeFlat;
+  stackFrame.AddrFrame.Offset = context.Ebp;
+  stackFrame.AddrFrame.Mode = AddrModeFlat;
+  stackFrame.AddrStack.Offset = context.Esp;
+  stackFrame.AddrStack.Mode = AddrModeFlat;
+#else
+  stackFrame.AddrPC.Offset = context.Rip;
+  stackFrame.AddrPC.Mode = AddrModeFlat;
+  stackFrame.AddrFrame.Offset = context.Rbp;
+  stackFrame.AddrFrame.Mode = AddrModeFlat;
+  stackFrame.AddrStack.Offset = context.Rsp;
+  stackFrame.AddrStack.Mode = AddrModeFlat;
+#endif
+
+  // 获取当前模块句柄（用于跳过自己的模块）
+  HMODULE currentModule = NULL;
+  {
+    MEMORY_BASIC_INFORMATION mbi;
+    VirtualQuery(GetCallingModule, &mbi, sizeof(mbi));
+    currentModule = (HMODULE)mbi.AllocationBase;
+  }
+
+  // 查找调用栈
+  for (int i = 0; i < 10; i++) {  // 限制深度避免无限循环
+    if (!StackWalk64(
+#ifdef _M_IX86
+            IMAGE_FILE_MACHINE_I386,
+#else
+            IMAGE_FILE_MACHINE_AMD64,
+#endif
+            GetCurrentProcess(), GetCurrentThread(), &stackFrame, &context, NULL, NULL, NULL, NULL
+        )) {
+      break;
+    }
+
+    // 跳过第一个帧（是我们自己）
+    if (i < 1)
+      continue;
+
+    // 获取模块信息
+    HMODULE frameModule = NULL;
+    DWORD64 moduleBase = SymGetModuleBase64(GetCurrentProcess(), stackFrame.AddrPC.Offset);
+
+    if (moduleBase) {
+      frameModule = (HMODULE)moduleBase;
+
+      // 如果模块不是当前模块，就是我们要找的调用者
+      if (frameModule != currentModule) {
+        WCHAR moduleName[MAX_PATH] = {0};
+        if (GetModuleFileNameW(frameModule, moduleName, MAX_PATH)) {
+          WCHAR* fileName = wcsrchr(moduleName, L'\\');
+          SymCleanup(GetCurrentProcess());
+          return fileName ? (fileName + 1) : moduleName;
+        }
+      }
+    }
+  }
+
+  SymCleanup(GetCurrentProcess());
+  return L"未知模块";
+}
+class ConfigMgr {
+ public:
+  wstring Roaming;
+  wstring Local;
+  bool only_self_exe = true;  // only self exe can be modified;  // only self exe can be modified
+  wstring all;
+  toml::table config_;
+  wstring getFinalConfigContent() {
+    wstring configContent;
+    fs::path config_path = (selfDir() / fs::path(__FILE__).filename().replace_extension(".toml"));
+    if (fs::exists(config_path)) {
+      ifstream ifs(config_path);
+      configContent = wstring(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
+    } else {
+      cout << "Config file not found, using default config." << endl;
+      configContent = defautlConfig;
+    }
+    // replace the built-in variable
+    wstring exe_dir = selfExeDir().wstring();
+    configContent = regex_replace(configContent, wregex(LR"(\$\{EXE_DIR\})"), exe_dir);
+    return configContent;
+  }
+
+  void initConfigVar() {
+    auto AppData_tbl = config_["AppData"];
+    only_self_exe = AppData_tbl["only_self_exe"].value_or(true);
+    all = AppData_tbl["all"].value_or(L"");
+    Roaming = AppData_tbl["Roaming"].value_or(L"");
+    Local = AppData_tbl["Local"].value_or(L"");
+    if (Roaming.empty()) {
+      throw runtime_error("Roaming path is empty");
+    }
+    // resolve path
+    // Roaming = fs::absolute(Roaming).string();
+    // Local = fs::absolute(Local).string();
+  }
+  ConfigMgr() {
+    config_ = toml::parse(brv::strConvert(getFinalConfigContent()));
+    initConfigVar();
+  }
+  inline static unique_ptr<ConfigMgr> ins_ = nullptr;
+
+ public:
+  ConfigMgr(const ConfigMgr&) = delete;
+  ConfigMgr& operator=(const ConfigMgr&) = delete;
+  inline static ConfigMgr& _ins_() {
+    if (!ins_) {
+      ins_ = unique_ptr<ConfigMgr>(new ConfigMgr);
+    }
+    return *ins_;
+  }
+};
+decltype(&SHGetFolderPathW) SHGetFolderPathW_raw = &SHGetFolderPathW;
+
+HRESULT WINAPI SHGetFolderPathW_mod(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPWSTR pszPath) {
+  int i = 0;
+  if (configMgr.only_self_exe && !GetCallingModule().ends_with(L".exe")) {
+    return SHGetFolderPathW_raw(hwnd, csidl, hToken, dwFlags, pszPath);
+  }
+  if (configMgr.all.size()) {
+    HRESULT hr = SHGetFolderPathW_raw(hwnd, csidl, hToken, dwFlags, pszPath);
+    if (!SUCCEEDED(hr))
+      return hr;
+
+    static const wstring& target = LR"(\AppData)";
+    auto found = wcsistr(pszPath, target.data());
+    if (found) {  //&& (found[target.size()] == L'\\' || found[target.size()] == 0)
+      wstring dst_dir = (configMgr.all + (found + target.size()));
+      wcscpy_s(pszPath, MAX_PATH, dst_dir.data());
+    }
+    return hr;
+  } else if (configMgr.Roaming.size()) {
+    HRESULT hr = SHGetFolderPathW_raw(hwnd, csidl, hToken, dwFlags, pszPath);
+    if (!SUCCEEDED(hr))
+      return hr;
+    static const wstring& target = LR"(\AppData\Roaming)";
+    auto found = wcsistr(pszPath, target.data());
+    if (found && (found[target.size()] == L'\\' || found[target.size()] == 0)) {
+      wcscpy_s(pszPath, MAX_PATH, configMgr.Roaming.data());
+    }
+    return hr;
+  } else if (configMgr.Local.size()) {
+    HRESULT hr = SHGetFolderPathW_raw(hwnd, csidl, hToken, dwFlags, pszPath);
+    if (!SUCCEEDED(hr))
+      return hr;
+    static const wstring& target = LR"(\AppData\Local)";
+    auto found = wcsistr(pszPath, target.data());
+    if (found && (found[target.size()] == L'\\' || found[target.size()] == 0)) {
+      wcscpy_s(pszPath, MAX_PATH, configMgr.Local.data());
+    }
+    return hr;
+  }
+  return SHGetFolderPathW_raw(hwnd, csidl, hToken, dwFlags, pszPath);
+}
+decltype(&SHGetKnownFolderPath) SHGetKnownFolderPath_raw =
+    &SHGetKnownFolderPath;  // GetProcAddress(GetModuleHandleA("shell32.dll"), "SHGetKnownFolderPath");
+HRESULT WINAPI
+SHGetKnownFolderPath_mod(REFKNOWNFOLDERID rfid, DWORD dwFlags, HANDLE hToken, PWSTR* ppszPath) {
+  if (configMgr.only_self_exe && !GetCallingModule().ends_with(L".exe")) {
+    return SHGetKnownFolderPath_raw(rfid, dwFlags, hToken, ppszPath);
+  }
+  if (configMgr.all.size()) {
+    HRESULT hr = SHGetKnownFolderPath_raw(rfid, dwFlags, hToken, ppszPath);
+    if (!SUCCEEDED(hr))
+      return hr;
+
+    static const wstring& target = LR"(\AppData)";
+    auto found = wcsistr(*ppszPath, target.data());
+    if (found && (found[target.size()] == L'\\' || found[target.size()] == 0)) {
+      wcscpy_s(*ppszPath, MAX_PATH, configMgr.all.data());
+    }
+    return hr;
+  } else if (configMgr.Roaming.size()) {
+    HRESULT hr = SHGetKnownFolderPath_raw(rfid, dwFlags, hToken, ppszPath);
+    if (!SUCCEEDED(hr))
+      return hr;
+    static const wstring& target = LR"(\AppData\Roaming)";
+    auto found = wcsistr(*ppszPath, target.data());
+    if (found && (found[target.size()] == L'\\' || found[target.size()] == 0)) {
+      wcscpy_s(*ppszPath, MAX_PATH, configMgr.Roaming.data());
+    }
+    return hr;
+  } else if (configMgr.Local.size()) {
+    HRESULT hr = SHGetKnownFolderPath_raw(rfid, dwFlags, hToken, ppszPath);
+    if (!SUCCEEDED(hr))
+      return hr;
+    static const wstring& target = LR"(\AppData\Local)";
+    auto found = wcsistr(*ppszPath, target.data());
+    if (found && (found[target.size()] == L'\\' || found[target.size()] == 0)) {
+      wcscpy_s(*ppszPath, MAX_PATH, configMgr.Local.data());
+    }
+    return hr;
+  }
+  return SHGetKnownFolderPath_raw(rfid, dwFlags, hToken, ppszPath);
+}
+
+void setHook() {
+  DetoursHooker hooker;
+  hooker.endeque({
+      {&SHGetFolderPathW_raw, &SHGetFolderPathW_mod},
+      //{&SHGetKnownFolderPath_raw, &SHGetKnownFolderPath_mod},
+
+  });
+  hooker.setHook();
+}
+
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReson, LPVOID lpReserved) {
+  if (dwReson != DLL_PROCESS_ATTACH)
+    return TRUE;
+
+  DisableThreadLibraryCalls(hModule);
+
+  // init the ConfigMgr
+  try {
+    ConfigMgr::_ins_();
+    setHook();
+  } catch (const exception& e) {
+    MessageBoxA(nullptr, e.what(), "Exception occured", MB_ICONERROR);
+    exit(-1);
+  }
+  return TRUE;
+}

@@ -1,7 +1,8 @@
 ﻿module;
 #include <cwchar>
+#include <windows.h>
 export module strUtils;
-//import std.compat;
+import std;
 export {
   const wchar_t* wcsistr(const wchar_t* haystack, const wchar_t* needle) {
     if (!haystack || !needle)
@@ -16,5 +17,30 @@ export {
       haystack++;
     }
     return nullptr;
+  }
+  void to_lowercase(wchar_t * in) {
+    for (int i = 0; in[i]; i++) {
+      in[i] = std::towlower(in[i]);
+    }
+  }
+  std::wstring AnsiToWide(const std::string& str) {
+    if (str.empty())
+      return std::wstring();
+    int needed = MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
+    if (needed <= 0)
+      return std::wstring();
+    std::wstring wstr(needed - 1, L'\0');
+    MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, &wstr[0], needed);
+    return wstr;
+  }
+  std::string WideToAnsi(const std::wstring& wstr) {
+    if (wstr.empty())
+      return std::string();
+    int needed = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, NULL, 0, NULL, NULL);
+    if (needed <= 0)
+      return std::string();
+    std::string str(needed - 1, '\0');
+    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, &str[0], needed, NULL, NULL);
+    return str;
   }
 }

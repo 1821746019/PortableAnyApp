@@ -3,14 +3,14 @@
 
 import std;
 import Hooker;
+import selfInfo;
+import extraNativeFuncs;
 using namespace std;
 namespace fs = filesystem;
 
-import selfInfo;
 bool InjectDLL(HANDLE hProcess, const char* dllPath) {
   // 获取LoadLibraryA的地址
-  LPVOID pLoadLibrary =
-      (LPVOID)GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "LoadLibraryA");
+  LPVOID pLoadLibrary = (LPVOID)GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "LoadLibraryA");
   if (!pLoadLibrary) {
     cerr << "无法获取LoadLibraryA地址" << endl;
     return false;
@@ -18,25 +18,23 @@ bool InjectDLL(HANDLE hProcess, const char* dllPath) {
 
   // 分配内存给目标进程以存储DLL路径
   LPVOID pRemoteString =
-      VirtualAllocEx(hProcess, nullptr, strlen(dllPath) + 1,
-                     MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+      VirtualAllocEx(hProcess, nullptr, strlen(dllPath) + 1, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
   if (!pRemoteString) {
     cerr << "无法分配内存" << endl;
     return false;
   }
 
   // 写入DLL路径到目标进程
-  if (!WriteProcessMemory(hProcess, pRemoteString, dllPath, strlen(dllPath) + 1,
-                          nullptr)) {
+  if (!WriteProcessMemory(hProcess, pRemoteString, dllPath, strlen(dllPath) + 1, nullptr)) {
     cerr << "无法写入目标进程内存" << endl;
     VirtualFreeEx(hProcess, pRemoteString, 0, MEM_RELEASE);
     return false;
   }
 
   // 在目标进程中创建远程线程，调用LoadLibraryA加载DLL
-  HANDLE hThread = CreateRemoteThread(hProcess, nullptr, 0,
-                                      (LPTHREAD_START_ROUTINE)pLoadLibrary,
-                                      pRemoteString, 0, nullptr);
+  HANDLE hThread = CreateRemoteThread(
+      hProcess, nullptr, 0, (LPTHREAD_START_ROUTINE)pLoadLibrary, pRemoteString, 0, nullptr
+  );
   if (!hThread) {
     cerr << "无法创建远程线程" << endl;
     VirtualFreeEx(hProcess, pRemoteString, 0, MEM_RELEASE);
@@ -52,25 +50,11 @@ bool InjectDLL(HANDLE hProcess, const char* dllPath) {
 
   return true;
 }
-__int64 __fastcall CreateProcessInternalW(
-    void* hToken,  // a1 - 表示调用者的令牌或访问标志
-    const WCHAR* lpApplicationName,  // lpApplicationName - 可执行文件名称
-    const WCHAR* lpCommandLine,      // lpCommandLine - 命令行参数
-    WCHAR* lpProcessAttributes,      // - 新进程的安全属性
-    WCHAR* lpThreadAttributes,       // - 新线程的安全属性
-    int bInheritHandles,             // - 是否继承句柄
-    int dwCreationFlags,             // - 进程创建标志
-    __int64 lpEnvironment,           // - 环境变量
-    const WCHAR* lpCurrentDirectory,           //  - 当前目录
-    STARTUPINFOW* lpStartupInfo,               //  - 启动信息
-    PROCESS_INFORMATION* lpProcessInformation  //  - 返回进程信息
-);
 
 bool isNeedLoading(wstring_view cmdline) {
   // reduce the usage of global var as much as possible, make it static so it
   // just be inited once
-  static toml::parse_result config =
-      toml::parse_file((selfDir() / "loadDllInChildren.toml").wstring());
+  static toml::parse_result config = toml::parse_file((selfDir() / "loadDllInChildren.toml").wstring());
   // 获取配置
   bool isBlackListMode = config["isBlacklistMode"].as_boolean();
   auto str2wstr = [](const string& e) { return fs::path(e).wstring(); };
@@ -137,35 +121,31 @@ bool isNeedLoading(wstring_view cmdline) {
     return !(!match_excluded || match_included);
   }
 }
-decltype(&CreateProcessInternalW) CreateProcessInternalW_raw =
-    (decltype(&CreateProcessInternalW))GetProcAddress(
-        LoadLibraryA("kernelbase.dll"),
-        "CreateProcessInternalW");
 
 __int64 __fastcall CreateProcessInternalW_mod(
-    void* hToken,  // a1 - 表示调用者的令牌或访问标志
-    const WCHAR* lpApplicationName,  // lpApplicationName - 可执行文件名称
-    const WCHAR* lpCommandLine,      // lpCommandLine - 命令行参数
-    WCHAR* lpProcessAttributes,      // - 新进程的安全属性
-    WCHAR* lpThreadAttributes,       // - 新线程的安全属性
-    int bInheritHandles,             // - 是否继承句柄
-    int dwCreationFlags,             // - 进程创建标志
-    __int64 lpEnvironment,           // - 环境变量
-    const WCHAR* lpCurrentDirectory,           // - 当前目录
-    STARTUPINFOW* lpStartupInfo,               //  - 启动信息
-    PROCESS_INFORMATION* lpProcessInformation  // - 返回进程信息
+    void* hToken,
+    const WCHAR* lpApplicationName,
+    const WCHAR* lpCommandLine,
+    WCHAR* lpProcessAttributes,
+    WCHAR* lpThreadAttributes,
+    int bInheritHandles,
+    int dwCreationFlags,
+    __int64 lpEnvironment,
+    const WCHAR* lpCurrentDirectory,
+    STARTUPINFOW* lpStartupInfo,
+    PROCESS_INFORMATION* lpProcessInformation
 ) {
   if (!isNeedLoading(lpCommandLine)) {
     return CreateProcessInternalW_raw(
-        hToken, lpApplicationName, lpCommandLine, lpProcessAttributes,
-        lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment,
-        lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+        hToken, lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles,
+        dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation
+    );
   }
   dwCreationFlags |= CREATE_SUSPENDED;
   auto ret = CreateProcessInternalW_raw(
-      hToken, lpApplicationName, lpCommandLine, lpProcessAttributes,
-      lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment,
-      lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+      hToken, lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles,
+      dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation
+  );
   PROCESS_INFORMATION& pi = *lpProcessInformation;
 
   if (!ret) {

@@ -1,5 +1,5 @@
 ﻿link_libraries(ntdll.lib)
-add_executable(dll_test "version_dll_test.cpp")
+add_library(dll_test SHARED "version_dll_test.cpp")
 target_link_libraries(dll_test "version")
 
 
@@ -26,10 +26,10 @@ bs_add_exe(${exe_name} boost.spirit.cpp)
 add_dependencies(testApp extBoot loadDllInChildren allocConsole )
 
 
-set(exe_name tmp)
-bs_add_exe(${exe_name} tmp.ixx)
+set(exe_name  tmp)
+bs_add_exe(${exe_name} WIN32 tmp.ixx)
 target_precompile_headers(${exe_name} REUSE_FROM winreg)
-target_link_libraries(${exe_name} PRIVATE RegCore)
+target_link_libraries(${exe_name} PRIVATE RegCore rollingWheelToToggleTab)
 
 set(exe_name RegParser)
 

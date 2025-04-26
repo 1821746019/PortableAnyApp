@@ -1,4 +1,4 @@
-module;
+﻿module;
 #include <Windows.h>
 export module func2hook.kernel.raw;
 // query from the AppRegHive first. If not found, query from the original

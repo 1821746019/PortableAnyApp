@@ -8,7 +8,7 @@ link_libraries(PkgConfig::tomlplusplus)
 
 
 set(lib_name common)
-bs_add_lib(${lib_name} OBJECT "_common/*.ixx" )
+bs_add_lib(${lib_name} STATIC "_common/*.ixx" )
 target_link_libraries(${lib_name} PRIVATE MyLib)
 
 link_libraries(${lib_name})

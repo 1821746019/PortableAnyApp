@@ -9,11 +9,9 @@ import FsConfig;
 import std;
 
 export class ConfigMgr {
-  VarInterpolationMgr* macro_mgr_;
-
   FsConfig fs_config_;
-  static std::string preprocConfig(const std::wstring& content) {
-    std::ifstream ifs(content);
+  static std::string loadConfigFromDisk(const std::wstring& filePath) {
+    std::ifstream ifs(filePath);
     if (!ifs) {
       throw std::runtime_error("failed to open file");
     }
@@ -27,33 +25,28 @@ export class ConfigMgr {
  public:
   FsConfig fsConfig() { return fs_config_; }
   ConfigMgr(VarInterpolationMgr* varIntepoMgr, const std::wstring& config_path) {
-    macro_mgr_ = varIntepoMgr;
-    std::string afterPreproc = preprocConfig(config_path);
+    std::string afterPreproc = loadConfigFromDisk(config_path);
     auto config = toml::parse(afterPreproc);
-    AppHomeGetSchema AHGS =
-        (AppHomeGetSchema)config["AppHomeGetSchema"].as_integer()->get();
+    AppHomeGetSchema AHGS = (AppHomeGetSchema)config["AppHomeGetSchema"].as_integer()->get();
 
     varIntepoMgr->add({L"AppHome", getAppHomePathW(AHGS)});
     varIntepoMgr->add({L"ExeDir", brv::strConvert(getExeDir())});
     varIntepoMgr->add({L"ConfigDir", std::filesystem::path(config_path).parent_path()});
 
-    const auto& user_defined_macros =
-        *config["user_defined_var_list"].as_table();
+    const auto& user_defined_macros = *config["user_defined_var_list"].as_table();
     for (auto& [k, v] : user_defined_macros) {
-      std::wstring u_m = brv::strConvert(k.str().data()),
-                   u_v = brv::strConvert(v.as_string()->get());
+      std::wstring u_m = brv::strConvert(k.str().data()), u_v = brv::strConvert(v.as_string()->get());
       varIntepoMgr->add(std::pair{u_m, varIntepoMgr->replace(u_v)});
     }
     // FsConfig
     const toml::table& FsConfig = *config["FsConfig"].as_table();
     fs_config_.blacklist_mode = FsConfig["blacklist_mode"].as_boolean();
     for (auto& e : *FsConfig["excluded_path_list"].as_array()) {
-      fs_config_.excluded_path_list.emplace_back(
-          varIntepoMgr->replace(brv::strConvert(e.as_string()->get())));
+      fs_config_.excluded_path_list.emplace_back(varIntepoMgr->replace(brv::strConvert(e.as_string()->get()))
+      );
     }
     for (auto& e : *FsConfig["path_list"].as_array()) {
-      fs_config_.path_list.emplace_back(
-          varIntepoMgr->replace(brv::strConvert(e.as_string()->get())));
+      fs_config_.path_list.emplace_back(varIntepoMgr->replace(brv::strConvert(e.as_string()->get())));
     }
     // get redirection obj arr
     auto redirections = *config["redirection"].as_array();
@@ -64,8 +57,7 @@ export class ConfigMgr {
       auto old_ = brv::strConvert(redirection["old"].as_string()->get());
       auto new_ = brv::strConvert(redirection["new"].as_string()->get());
 
-      fs_config_.old2new.emplace(varIntepoMgr->replace(old_),
-                                 varIntepoMgr->replace(new_));
+      fs_config_.old2new.emplace(varIntepoMgr->replace(old_), varIntepoMgr->replace(new_));
     }
     // for(auto& r:redirections)
     //{

@@ -1,4 +1,4 @@
-module;
+ï»¿module;
 #include <ntdll.h>
 export module func2hook;
 
@@ -8,7 +8,7 @@ import my_converter.str;
 import log;
 import reg_common;
 
-// Ç°×º²»ÊÇ\REGISTRY, ²»×÷ÖØ¶¨Ïò
+// å‰ç¼€ä¸æ˜¯\REGISTRY, ä¸ä½œé‡å®šå‘
 #define redirectIt                                                          \
   wchar_t path[int(MAX_PATH * 1.5)];                                        \
   wcscpy_s(path, getAppRegHiveRegPath().c_str());                           \
@@ -32,7 +32,7 @@ export {
     redirectIt;
     NTSTATUS status = NtOpenKey_raw(KeyHandle, DesiredAccess, &OA_new);
     if (status !=
-        STATUS_SUCCESS) {  // ÔÚAppRegHiveÀïÕÒ²»µ½, fallback to original
+        STATUS_SUCCESS) {  // åœ¨AppRegHiveé‡Œæ‰¾ä¸åˆ°, fallback to original
       status = NtOpenKey_raw(KeyHandle, DesiredAccess, ObjectAttributes);
     }
     return status;

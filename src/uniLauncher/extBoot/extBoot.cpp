@@ -40,8 +40,7 @@ class ConfigMgr {
   }
 
   fs::path getConfigFilePath() {
-    fs::path configFileName =
-        fs::path(__FILE__).filename().replace_extension(".toml");
+    fs::path configFileName = fs::path(__FILE__).filename().replace_extension(".toml");
     fs::path currDir = selfDir;
     fs::path config_path;
     while (true) {
@@ -51,14 +50,13 @@ class ConfigMgr {
         break;
       }
       bool isInHome =
-          fs::exists(currDir / "App") && fs::is_directory(currDir / "App");
+          currDir.filename() != "App" && fs::exists(currDir / "App") && fs::is_directory(currDir / "App");
       if (isInHome) {
         // 停止查找
         throw fs::filesystem_error(
-            format("{} not found in the ancestor dir of the {}",
-                   configFileName.string(), currExeName_),
-            config_path,
-            std::make_error_code(std::errc::no_such_file_or_directory));
+            format("{} not found in the ancestor dir of the {}", configFileName.string(), currExeName_),
+            config_path, std::make_error_code(std::errc::no_such_file_or_directory)
+        );
       }
       currDir = currDir.parent_path();  // 找不到就回退一级目录
     }
@@ -70,12 +68,12 @@ class ConfigMgr {
     ifstream ifs(config_path);
     if (!ifs) {
       throw fs::filesystem_error(
-          format("Please make sure the {} exists", config_path.string()).data(),
-          config_path, make_error_code(errc::no_such_file_or_directory));
+          format("Please make sure the {} exists", config_path.string()).data(), config_path,
+          make_error_code(errc::no_such_file_or_directory)
+      );
     }
 
-    configContent_ =
-        string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
+    configContent_ = string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
     preprocConfigContent();
   }
 
@@ -159,12 +157,10 @@ void loadExtDll() {
     ExtDir = (currDir / ExtDirName);
     if (exists(ExtDir))
       break;
-    bool isInHome =
-        fs::exists(currDir / "App") && fs::is_directory(currDir / "App");
+    bool isInHome = fs::exists(currDir / "App") && fs::is_directory(currDir / "App");
     if (isInHome) {
       // 停止查找
-      logger().warn(format("{} not found in the ancestor dir of the {}",
-                         ExtDirName, currDir.string()));
+      logger().warn(format("{} not found in the ancestor dir of the {}", ExtDirName, currDir.string()));
     }
     currDir = currDir.parent_path();  // 找不到就回退一级目录
   }
@@ -182,12 +178,11 @@ void loadExtDll() {
   if (is32) {
     // 32位系统下，加载 x86 版本的 dll故只加载以.x86.dll 结尾的 dll
     dllPath_list.erase(
-        ranges::remove_if(dllPath_list,
-                          [](const fs::path& e) -> bool {
-                            return !e.wstring().ends_with(L".x86.dll");
-                          })
-            .begin(),
-        dllPath_list.end());
+        ranges::remove_if(
+            dllPath_list, [](const fs::path& e) -> bool { return !e.wstring().ends_with(L".x86.dll"); }
+        ).begin(),
+        dllPath_list.end()
+    );
   }
 
   ConfigMgr configMgr;
@@ -219,14 +214,15 @@ void initEnvVarForChildren() {
   if (getenv("TOP_PROCESS_NAME"))
     return;
   // the first process loading extBoot.dll recognized as TOP_PROCESS
-  _putenv(format("TOP_PROCESS_NAME={}",
-                 [] {
-                   string buf(MAX_PATH, 0);
-                   GetModuleFileNameA(GetModuleHandleA(nullptr), buf.data(),
-                                      buf.size());
-                   string ret = buf.data() + buf.rfind("\\") + 1;
-                   return ret;
-                 }())
+  _putenv(format(
+              "TOP_PROCESS_NAME={}",
+              [] {
+                string buf(MAX_PATH, 0);
+                GetModuleFileNameA(GetModuleHandleA(nullptr), buf.data(), buf.size());
+                string ret = buf.data() + buf.rfind("\\") + 1;
+                return ret;
+              }()
+  )
               .data());
 }
 static struct Init {
@@ -234,9 +230,10 @@ static struct Init {
     HMODULE hModule = nullptr;
 
     // 使用 GetModuleHandleExW 获取当前模块句柄
-    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                               GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                           reinterpret_cast<LPCWSTR>(&DllMain), &hModule)) {
+    if (GetModuleHandleExW(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            reinterpret_cast<LPCWSTR>(&DllMain), &hModule
+        )) {
       wchar_t buf[MAX_PATH];
       GetModuleFileNameW(hModule, buf, size(buf));
       selfPath = buf;

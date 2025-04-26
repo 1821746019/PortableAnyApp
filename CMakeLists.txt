@@ -14,7 +14,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 
 #解决Qt app定义了_UTF8而std模块没有导致有：Possible incompatible environment while importing module 'std': _UTF8 is defined in current command line and not in module command line
-add_compile_options(-D_UTF8)
+add_compile_options(-D_UTF8)#定义_UTF8宏?
+#add_compile_options(/utf-8)
 add_compile_definitions($<$<CONFIG:Debug>:BS_DBG>)
 #if("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
 if(MSVC)

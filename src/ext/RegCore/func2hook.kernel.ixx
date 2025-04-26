@@ -7,6 +7,7 @@ import RegHandler_B;
 import RegHandlerMgr;
 import func2hook.kernel.raw;
 import reg_common;
+import strUtils;
 #define cfgMgr ConfigMgr::_ins_()
 #define regHandle RegHandlerMgr::_ins_().RegHandler()
 

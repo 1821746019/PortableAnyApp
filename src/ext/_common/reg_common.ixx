@@ -1,6 +1,6 @@
 ﻿module;
 #include <ntdll.h>
-
+#pragma comment(lib, "ntdll.lib") 
 export module reg_common;
 import std;
 import my_converter.str;
@@ -59,26 +59,7 @@ export {
     std::wmemcpy(ret.get(), wstr.c_str(), bufSizeFinal);
     return ret;
   }
-  std::wstring AnsiToWide(const std::string& str) {
-    if (str.empty())
-      return std::wstring();
-    int needed = MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
-    if (needed <= 0)
-      return std::wstring();
-    std::wstring wstr(needed - 1, L'\0');
-    MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, &wstr[0], needed);
-    return wstr;
-  }
-  std::string WideToAnsi(const std::wstring& wstr) {
-    if (wstr.empty())
-      return std::string();
-    int needed = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, NULL, 0, NULL, NULL);
-    if (needed <= 0)
-      return std::string();
-    std::string str(needed - 1, '\0');
-    WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, &str[0], needed, NULL, NULL);
-    return str;
-  }
+
   // e.用于把形如 "MACHINE\\..." 替换为 "HKEY_LOCAL_MACHINE\\..."
   std::wstring abstractNonRootFromAbsRegPath(const std::wstring_view& src) {
     if (!src.starts_with(REG_PREFIX))
@@ -93,5 +74,9 @@ export {
 
     // 如果既不是 MACHINE\ 也不是 USER\，直接返回
     return NoAbsPrefix;
+  }
+  std::wstring GetUnifiedKeyPath(HKEY hKey) {
+    std::wstring keyPath = GetKeyPath(hKey);
+    return abstractNonRootFromAbsRegPath(keyPath);
   }
 }

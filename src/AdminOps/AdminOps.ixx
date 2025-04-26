@@ -9,6 +9,7 @@ constexpr auto serviceName = BS_TARGET_NAME "Service";
 export namespace AdminOps {
 class Registry {
   std::wstring mountHive(const std::wstring& path) {
+    QHostInfo::lookupHost()
     QLocalSocket socket;
     socket.connectToServer(serviceName);
     if (!socket.waitForConnected()) {

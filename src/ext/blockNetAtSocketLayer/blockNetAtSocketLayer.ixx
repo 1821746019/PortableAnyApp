@@ -1,11 +1,9 @@
 ﻿module;
-#include <ws2tcpip.h>
-#include <Windows.h>
-#include <WinDNS.h>
-#include <toml++/toml.hpp>
-#pragma comment(lib, "dnsapi.lib")
-#pragma comment(lib, "ws2_32.lib")
 
+#include <WinSock2.h>
+#include <Windows.h>
+#include <toml++/toml.hpp>
+#pragma comment(lib, "ws2_32.lib")
 export module HijackDnsQuery;
 import std;
 import Hooker;
@@ -58,38 +56,29 @@ class ConfigMgr {
     return domainsBlocked.contains(domain);
   }
 };
-
-decltype(&DnsQuery_W) DnsQuery_W_raw = &DnsQuery_W;
-
-DNS_STATUS WINAPI DnsQuery_W_mod(
-    PCWSTR pszName,
-    WORD wType,
-    DWORD Options,
-    PVOID pExtra,
-    PDNS_RECORD* ppQueryResults,
-    PVOID* pReserved
+decltype(&connect) connect_raw = &connect;
+int WSAAPI
+connect_mod(_In_ SOCKET s, _In_reads_bytes_(namelen) const struct sockaddr FAR* name, _In_ int namelen) {
+  return SOCKET_ERROR;
+}
+decltype(&WSAConnect) WSAConnect_raw = &WSAConnect;
+int WSAAPI WSAConnect_mod(
+    SOCKET s,
+    const struct sockaddr* name,
+    int namelen,
+    LPWSABUF lpCallerData,
+    LPWSABUF lpCalleeData,
+    LPQOS lpSQOS,
+    LPQOS lpGQOS
 ) {
-  bool isBlocked = ConfigMgr::_ins_().isNeedBlocking(pszName);
+  return SOCKET_ERROR;
+}
 
-  return isBlocked ? 1 : DnsQuery_W_raw(pszName, wType, Options, pExtra, ppQueryResults, pReserved);
-}
-decltype(&getaddrinfo) getaddrinfo_raw = &getaddrinfo;
-INT WSAAPI
-getaddrinfo_mod(PCSTR pNodeName, PCSTR pServiceName, const ADDRINFOA* pHints, PADDRINFOA* ppResult) {
-  bool isBlocked = ConfigMgr::_ins_().isNeedBlocking(filesystem::path(pNodeName).wstring());
-  return isBlocked ? 0 : getaddrinfo_raw(pNodeName, pServiceName, pHints, ppResult);
-}
-decltype(&gethostbyname) gethostbyname_raw = &gethostbyname;
-struct hostent* WSAAPI gethostbyname_mod(const char* name) {
-  bool isBlocked = ConfigMgr::_ins_().isNeedBlocking(filesystem::path(name).wstring());
-  return isBlocked ? nullptr : gethostbyname_raw(name);
-}
 void setHook() {
   DetoursHooker hooker;
   hooker.endeque({
-      {&DnsQuery_W_raw, &DnsQuery_W_mod},
-      {&getaddrinfo_raw, &getaddrinfo_mod},
-      {&gethostbyname_raw, &gethostbyname_mod},
+      {&connect_raw, &connect_mod},
+      {&WSAConnect_raw, &WSAConnect_mod},
 
   });
   hooker.setHook();
@@ -103,7 +92,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD dwReson, LPVOID lpReserved) {
 
   // init the ConfigMgr
   try {
-    ConfigMgr::_ins_();
+    // ConfigMgr::_ins_();
     setHook();
   } catch (const exception& e) {
     MessageBoxA(nullptr, e.what(), "Exception occured", MB_ICONERROR);

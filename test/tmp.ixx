@@ -1,80 +1,89 @@
-module;
-
-// #include <spdlog/spdlog.h>
-
-#include <ntdll.h>
-
-// #include <w>
-#pragma comment(lib, "winmm.lib")
-#pragma comment(lib, "ntdll.lib")
-
+﻿module;
+#include <Windows.h>
 export module _;
 import std;
-// import std.compat;
-using namespace std;
+import rollingWheelToToggleTab;
 
-extern "C" int main() {
+// 显示托盘图标
+NOTIFYICONDATA CreateTrayIcon(HWND hWnd) {
+  NOTIFYICONDATA nid = {0};
+  nid.cbSize = sizeof(NOTIFYICONDATA);
+  nid.hWnd = hWnd;
+  nid.uID = 1;
+  nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
+  nid.uCallbackMessage = WM_USER + 1;
+  nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+  lstrcpy(nid.szTip, TEXT("鼠标滚轮快捷键"));
+  Shell_NotifyIcon(NIM_ADD, &nid);
+  return nid;
+}
 
-  unique_ptr<wchar_t>(nullptr);
-
-  getchar();
-  /*64bit 0xffffffff80000002
-   *32bit 0x80000002
-   */
-
-#ifdef _WIN64
-  LoadLibraryA(
-      R"(D:\Users\Administrator\Desktop\myCode\_CMake\PortableAnyApp\install\x64\Ext\RegCore.dll)");
-#else
-  LoadLibraryA(
-      R"(D:\Users\Administrator\Desktop\myCode\_CMake\PortableAnyApp\install\x86\Ext\RegCore.x86.dll)");
-#endif
-  while (true) {
-    HKEY hkey;
-    // auto appReg = RegLoadAppKeyW(
-    //     LR"(D:\Users\Administrator\Desktop\myCode\_CMake\PortableAnyApp\install\AppRegHive)",
-    //     &hkey, KEY_ALL_ACCESS, 0, 0);
-    winreg::RegKey key(HKEY_LOCAL_MACHINE,
-                       LR"(SOFTWARE\Microsoft\Cryptography)");
-    // winreg::RegKey key(HKEY_LOCAL_MACHINE);
-
-    // winreg::RegKey key(hkey);
-
-    for (auto& v : key.EnumSubKeys()) {
-      wcout << v << L'\n';
-    }
-    for (auto& v : key.EnumValues()) {
-      wcout << v.first << " : " << v.second << L'\n';
-      if (v.second == REG_SZ) {
-        wcout << key.GetStringValue(v.first) << L'\n';
+// 窗口消息处理函数
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+  switch (message) {
+    case WM_DESTROY:
+      PostQuitMessage(0);
+      break;
+    case WM_USER + 1:
+      if (lParam == WM_RBUTTONUP) {
+        POINT pt;
+        GetCursorPos(&pt);
+        HMENU hMenu = CreatePopupMenu();
+        AppendMenu(hMenu, MF_STRING, 1, TEXT("退出"));
+        SetForegroundWindow(hWnd);
+        TrackPopupMenu(hMenu, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hWnd, NULL);
+        DestroyMenu(hMenu);
       }
-    }
-    getchar();
+      break;
+    case WM_COMMAND:
+      if (LOWORD(wParam) == 1) {
+        DestroyWindow(hWnd);
+      }
+      break;
+    default:
+      return DefWindowProc(hWnd, message, wParam, lParam);
+  }
+  return 0;
+}
+
+// 创建隐藏窗口
+HWND CreateHiddenWindow(HINSTANCE hInstance) {
+  WNDCLASS wc = {0};
+  wc.lpfnWndProc = WndProc;
+  wc.hInstance = hInstance;
+  wc.lpszClassName = TEXT("MouseHookWindowClass");
+  RegisterClass(&wc);
+
+  return CreateWindow(TEXT("MouseHookWindowClass"), TEXT(""), 0, 0, 0, 0, 0, NULL, NULL, hInstance, NULL);
+}
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+  // 创建窗口
+  HWND hWnd = CreateHiddenWindow(hInstance);
+  if (!hWnd) {
+    MessageBox(NULL, TEXT("无法创建窗口！"), TEXT("错误"), MB_ICONERROR);
+    return 1;
   }
 
-  // std::cout << filesystem:;
-  //{
-  //    filesystem::path dll_path =
-  //        R"(D:\Users\Administrator\Desktop\myCode\_CMake\PortableAnyApp\build\x64-debug\src\ext\allocConsole.dll)";
+  // 创建托盘图标
+  NOTIFYICONDATA nid = CreateTrayIcon(hWnd);
 
-  //   // putenv(format("LOADED_DLL={}", dll_path.string()).data());
-  //   LoadLibraryW(dll_path.c_str());
-  //   getchar();
+  // 安装钩子
+  if (!InstallHook()) {
+    MessageBox(NULL, TEXT("无法安装鼠标钩子！"), TEXT("错误"), MB_ICONERROR);
+    return 1;
+  }
 
-  //   return 0;
-  //}
-  //      timeBeginPeriod(0);
-  ////filesystem::path dll_path =
-  ////
-  /// R"(D:\Users\Administrator\Desktop\myCode\_CMake\PortableAnyApp\build\x64-debug\src\uniLauncher\extBoot.dll)";
+  // 消息循环
+  MSG msg;
+  while (GetMessage(&msg, NULL, 0, 0)) {
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
+  }
 
-  //// putenv(format("LOADED_DLL={}", dll_path.string()).data());
-  // LoadLibraryW(dll_path.c_str());
-  // system("cmd");
-  // string line;
-  // while (getline(cin, line)) {
-  //   system(line.data());
-  // }
+  // 清理资源
+  UninstallHook();
+  Shell_NotifyIcon(NIM_DELETE, &nid);
 
-  //// getchar();
+  return (int)msg.wParam;
 }

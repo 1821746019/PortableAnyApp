@@ -7,7 +7,7 @@ install/
 .idea/
 *.user
 _depre/
-
+artifacts/
 
 
 

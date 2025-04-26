@@ -7,21 +7,9 @@
 export module _;
 import std;
 import Hooker;
-import selfInfo;
+import fs_related;
 using namespace std;
 namespace fs = filesystem;
-
-string loadConfigFromDisk() {
-  fs::path config_path = (selfDir() / fs::path(__FILE__).filename().replace_extension(".toml"));
-  if (!fs::exists(config_path)) {
-    throw fs::filesystem_error(
-        format("Please make sure the {} exists", config_path.string()).data(), config_path,
-        make_error_code(errc::no_such_file_or_directory)
-    );
-  }
-  ifstream ifs(config_path);
-  return string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
-}
 
 class ConfigMgr {
   static string initFinalConfigContent() {
