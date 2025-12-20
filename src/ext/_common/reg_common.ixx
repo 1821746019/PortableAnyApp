@@ -1,6 +1,6 @@
 ﻿module;
 #include <ntdll.h>
-#pragma comment(lib, "ntdll.lib") 
+#pragma comment(lib, "ntdll.lib")
 export module reg_common;
 import std;
 import my_converter.str;
@@ -12,6 +12,8 @@ export {
   constexpr int REG_PREFIX_LEN = std::size(REG_PREFIX) - 1;
 
   std::wstring GetKeyPath(HKEY hKey) {
+    if (!hKey)
+      return L"NO_REDIRECT";
     static std::unordered_map<HKEY, std::wstring> excluded({
         {HKEY_LOCAL_MACHINE, L"HKEY_LOCAL_MACHINE"},
         {HKEY_CURRENT_USER, L"HKEY_CURRENT_USER"},
@@ -62,17 +64,22 @@ export {
 
   // e.用于把形如 "MACHINE\\..." 替换为 "HKEY_LOCAL_MACHINE\\..."
   std::wstring abstractNonRootFromAbsRegPath(const std::wstring_view& src) {
-    if (!src.starts_with(REG_PREFIX))
+    // 使用wcsncmp检查是否以REG_PREFIX开头
+    if (_wcsnicmp(src.data(), REG_PREFIX, REG_PREFIX_LEN) != 0)
       return src.data();
+
     std::wstring NoAbsPrefix(src.data() + REG_PREFIX_LEN);
-    // 判断并替换前缀
-    if (NoAbsPrefix.starts_with(L"MACHINE\\")) {
-      return L"HKEY_LOCAL_MACHINE\\" + NoAbsPrefix.substr(8);  // 去掉 "MACHINE\" (长度8)
-    } else if (NoAbsPrefix.starts_with(L"USER\\")) {
-      return L"HKEY_CURRENT_USER\\" + NoAbsPrefix.substr(5);  // 去掉 "USER\" (长度5)
+
+    // 检查MACHINE\前缀，大小写不敏感
+    if (_wcsnicmp(NoAbsPrefix.c_str(), L"MACHINE\\", 8) == 0) {
+      return L"HKEY_LOCAL_MACHINE\\" + NoAbsPrefix.substr(8);
+    }
+    // 检查USER\前缀，大小写不敏感
+    else if (_wcsnicmp(NoAbsPrefix.c_str(), L"USER\\", 5) == 0) {
+      return L"HKEY_CURRENT_USER\\" + NoAbsPrefix.substr(5);
     }
 
-    // 如果既不是 MACHINE\ 也不是 USER\，直接返回
+    // 如果既不是MACHINE\也不是USER\，直接返回
     return NoAbsPrefix;
   }
   std::wstring GetUnifiedKeyPath(HKEY hKey) {

@@ -1,14 +1,14 @@
 ﻿get_filename_component(currFileStem ${CMAKE_CURRENT_LIST_FILE} NAME_WLE)
 set(currTarget "_practice-${currFileStem}")
 
-set(dstExePath [[D:\Program\Productivity\Utils\utools\utools\uTools.exe]])
+set(dstExePath [[D:\Program Files\JianyingPro\JianyingPro_v8\8.2.0.13017\JianyingPro.exe]])
 set(args "")
 get_filename_component(dstExeDir "${dstExePath}" DIRECTORY)
 get_filename_component(appHomeDir ${dstExeDir} DIRECTORY)
 
 
 bs_add_lib(${currTarget} SHARED _.cpp)
-set(booter MachineGuidCustomizer)
+set(booter extBoot)
 set(extList )
 set(depList ${booter} ${extList})
 target_link_libraries(${currTarget} PRIVATE ${depList})

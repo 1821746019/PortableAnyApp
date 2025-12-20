@@ -12,7 +12,7 @@ NOTIFYICONDATA CreateTrayIcon(HWND hWnd) {
   nid.uID = 1;
   nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
   nid.uCallbackMessage = WM_USER + 1;
-  nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+  nid.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
   lstrcpy(nid.szTip, TEXT("鼠标滚轮快捷键"));
   Shell_NotifyIcon(NIM_ADD, &nid);
   return nid;
@@ -31,7 +31,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         HMENU hMenu = CreatePopupMenu();
         AppendMenu(hMenu, MF_STRING, 1, TEXT("退出"));
         SetForegroundWindow(hWnd);
-        TrackPopupMenu(hMenu, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hWnd, NULL);
+        TrackPopupMenu(hMenu, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hWnd, nullptr);
         DestroyMenu(hMenu);
       }
       break;
@@ -54,36 +54,17 @@ HWND CreateHiddenWindow(HINSTANCE hInstance) {
   wc.lpszClassName = TEXT("MouseHookWindowClass");
   RegisterClass(&wc);
 
-  return CreateWindow(TEXT("MouseHookWindowClass"), TEXT(""), 0, 0, 0, 0, 0, NULL, NULL, hInstance, NULL);
+  return CreateWindow(TEXT("MouseHookWindowClass"), TEXT(""), 0, 0, 0, 0, 0, nullptr, nullptr, hInstance, nullptr);
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-  // 创建窗口
-  HWND hWnd = CreateHiddenWindow(hInstance);
-  if (!hWnd) {
-    MessageBox(NULL, TEXT("无法创建窗口！"), TEXT("错误"), MB_ICONERROR);
-    return 1;
-  }
-
-  // 创建托盘图标
-  NOTIFYICONDATA nid = CreateTrayIcon(hWnd);
-
-  // 安装钩子
-  if (!InstallHook()) {
-    MessageBox(NULL, TEXT("无法安装鼠标钩子！"), TEXT("错误"), MB_ICONERROR);
-    return 1;
-  }
 
   // 消息循环
   MSG msg;
-  while (GetMessage(&msg, NULL, 0, 0)) {
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
+  while (1) {
+    std::string str="hello world";
+    std::cout << str << std::endl;
+    Sleep(1);
   }
-
-  // 清理资源
-  UninstallHook();
-  Shell_NotifyIcon(NIM_DELETE, &nid);
-
   return (int)msg.wParam;
 }

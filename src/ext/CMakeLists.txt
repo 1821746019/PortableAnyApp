@@ -1,5 +1,4 @@
-﻿
-set(lib_name ext_common)
+﻿set(lib_name ext_common)
 bs_add_lib(${lib_name} STATIC "_common/*.ixx")
 
 #set(lib_name extra)
@@ -29,6 +28,12 @@ foreach(i ${dir_list})
 
   bs_add_lib(${i} SHARED ${i}/*.ixx ${i}/*.cpp)
   set_target_properties(${i} PROPERTIES FOLDER "ext")
+  
+  if(${i} MATCHES "Qt5$")
+      target_link_libraries(${i} PRIVATE Qt5::Core Qt5::Network Qt5::Widgets Qt5::Gui)
+  elseif(${i} MATCHES "Qt6$")
+      target_link_libraries(${i} PRIVATE Qt6::Core Qt6::Network Qt6::Widgets Qt6::Gui)
+  endif()
 endforeach()
 
 # 针对每个target配置

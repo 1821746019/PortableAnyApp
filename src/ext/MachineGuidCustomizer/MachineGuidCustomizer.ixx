@@ -1,4 +1,5 @@
 ﻿module;
+#include <ntdll.h>
 #include <Windows.h>
 #include <toml++/toml.hpp>
 export module MachineIdCustomizer;
@@ -27,7 +28,7 @@ class ConfigMgr {
   ConfigMgr() {
     initFinalConfigContent();
     config_ = toml::parse(configContent_);
-    MachineGuid = config_["MachineGuid"].value_or(L"");
+    MachineGuid = config_["MachineGuid"].value_or(L"9f79a9d3-d029-4489-b59a-b382f2b14350");
   }
   inline static unique_ptr<ConfigMgr> ins_ = nullptr;
 
@@ -42,213 +43,283 @@ class ConfigMgr {
   }
   wstring MachineGuid;
 };
-
-auto RegQueryValueExW_raw =
-    (decltype(&RegQueryValueExW))GetProcAddress(GetModuleHandleA("kernelbase.dll"), "RegQueryValueExW");
-auto RegQueryValueExA_raw =
-    (decltype(&RegQueryValueExA))GetProcAddress(GetModuleHandleA("kernelbase.dll"), "RegQueryValueExA");
-std::string WideMultiSzToAnsiMultiSz(const wchar_t* wMultiSz, size_t cchW) {
-  // wMultiSz: 宽字符缓冲
-  // cchW: 宽字符个数(包含最后的双'\0'吗？可根据实际情况传入)
-
-  std::string result;
-  if (!wMultiSz || cchW == 0)
-    return result;
-
-  // 遍历每个子串
-  const wchar_t* pCur = wMultiSz;
-  while (*pCur) {
-    // 把当前子串转 ANSI
-    std::string ansi = WideToAnsi(pCur);
-    // 追加到result，添加一个 '\0' 分隔
-    result.append(ansi.c_str(), ansi.size());
-    result.push_back('\0');
-
-    // 跳到下一个子串(以 L'\0' 为结束)
-    pCur += wcslen(pCur) + 1;
-  }
-  // 最终再追加一个 '\0' 作为终止
-  result.push_back('\0');
-  return result;
-}
-LONG WINAPI RegQueryValueExA_mod(
-    HKEY hKey,
-    LPCSTR lpValueName,
-    LPDWORD lpReserved,
-    LPDWORD lpType,
-    LPBYTE lpData,
-    LPDWORD lpcbData
+decltype(&NtQueryValueKey) NtQueryValueKey_raw = &NtQueryValueKey;
+decltype(&NtEnumerateValueKey) NtEnumerateValueKey_raw = &NtEnumerateValueKey;
+NTSTATUS
+NTAPI
+NtQueryValueKey_mod(
+    _In_ HANDLE KeyHandle,
+    _In_ PUNICODE_STRING ValueName,
+    _In_ KEY_VALUE_INFORMATION_CLASS KeyValueInformationClass,
+    _Out_ PVOID KeyValueInformation,
+    _In_ ULONG Length,
+    _Out_ PULONG ResultLength
 ) {
-  if (!lpValueName) {
-    return ERROR_INVALID_PARAMETER;
-  }
+  // 检查是否查询的是"MachineGuid"
+  bool isMachineGuid = false;
+  if (ValueName != nullptr && ValueName->Buffer != nullptr) {
+    if (_wcsnicmp(ValueName->Buffer, L"MachineGuid", ValueName->Length / sizeof(WCHAR)) == 0) {
+      // 获取注册表键路径，检查是否是我们要修改的路径
+      ULONG keyNameSize = 0;
+      NTSTATUS status = NtQueryKey(KeyHandle, KeyNameInformation, nullptr, 0, &keyNameSize);
 
-  // 1) 转换ValueName
-  std::wstring wValName = AnsiToWide(lpValueName);
+      if (status == STATUS_BUFFER_TOO_SMALL || status == STATUS_BUFFER_OVERFLOW) {
+        std::vector<BYTE> buffer(keyNameSize);
+        PKEY_NAME_INFORMATION keyNameInfo = reinterpret_cast<PKEY_NAME_INFORMATION>(buffer.data());
 
-  // 2) 先探测所需大小
-  DWORD dwType = 0;
-  DWORD cbNeeded = 0;
-  LONG ret = RegQueryValueExW(hKey, wValName.c_str(), lpReserved, &dwType, nullptr, &cbNeeded);
+        status = NtQueryKey(KeyHandle, KeyNameInformation, keyNameInfo, keyNameSize, &keyNameSize);
+        if (NT_SUCCESS(status)) {
+          // 检查键路径是否包含Cryptography
+          const WCHAR cryptoPath[] = L"\\REGISTRY\\MACHINE\\SOFTWARE\\MICROSOFT\\CRYPTOGRAPHY";
 
-  if (ret != ERROR_SUCCESS && ret != ERROR_MORE_DATA) {
-    return ret;
-  }
+          std::wstring keyPath(keyNameInfo->Name, keyNameInfo->NameLength / sizeof(WCHAR));
+          std::wstring keyPathUpper = keyPath;
+          std::transform(keyPathUpper.begin(), keyPathUpper.end(), keyPathUpper.begin(), ::towupper);
 
-  // 把探测到的type和size写回
-  if (lpType)
-    *lpType = dwType;
-  if (lpcbData) {
-    // 如果lpData==nullptr，调用方仅仅想获取大小和类型
-    if (!lpData) {
-      *lpcbData = cbNeeded;
-      return ret;
+          if (keyPathUpper.find(cryptoPath) != std::wstring::npos) {
+            isMachineGuid = true;
+          }
+        }
+      }
     }
-  } else {
-    // 调用方不关心大小，但给了lpData，这样也能尝试一次
   }
 
-  // 3) 分配临时缓冲区（cbNeeded 可能是0表示值为空字符串）
-  std::vector<BYTE> tmpBuf(cbNeeded + 2);  // 给MULTI_SZ等多留点空间
-
-  // 4) 再次调用W版获取数据
-  DWORD dwType2 = 0;
-  DWORD cbActual = cbNeeded;  // second call
-  ret = RegQueryValueExW(hKey, wValName.c_str(), lpReserved, &dwType2, tmpBuf.data(), &cbActual);
-  if (ret != ERROR_SUCCESS) {
-    return ret;
+  // 如果不是目标键值或自定义GUID为空，则调用原始函数
+  if (!isMachineGuid || ConfigMgr::_ins_().MachineGuid.empty()) {
+    return NtQueryValueKey_raw(
+        KeyHandle, ValueName, KeyValueInformationClass, KeyValueInformation, Length, ResultLength
+    );
   }
 
-  // 再次写回type
-  if (lpType) {
-    *lpType = dwType2;
-  }
+  // 处理自定义的MachineGuid
+  const std::wstring& customGuid = ConfigMgr::_ins_().MachineGuid;
+  ULONG dataLength = (customGuid.length() + 1) * sizeof(WCHAR);  // 包含NULL终止符
 
-  // 5) 根据类型判断
-  if (dwType2 == REG_SZ || dwType2 == REG_EXPAND_SZ) {
-    // tmpBuf里是一个以L'\0'终止的宽字符串
-    // 转成ANSI
-    LPCWSTR wData = reinterpret_cast<LPCWSTR>(tmpBuf.data());
+  // 根据不同的信息类别直接构建返回结构
+  switch (KeyValueInformationClass) {
+    case KeyValuePartialInformation: {
+      // 计算所需总大小
+      ULONG requiredSize = FIELD_OFFSET(KEY_VALUE_PARTIAL_INFORMATION, Data) + dataLength;
 
-    // 安全获取宽字符长度(可能包括终止符)
-    size_t cchW = 0;
-    if (cbActual >= 2) {
-      // 宽字符个数 = cbActual / sizeof(WCHAR)，还要保证不越界
-      cchW = cbActual / sizeof(WCHAR);
+      // 如果只是查询大小
+      if (Length == 0) {
+        *ResultLength = requiredSize;
+        return STATUS_BUFFER_TOO_SMALL;
+      }
+
+      // 检查缓冲区是否足够
+      if (Length < requiredSize) {
+        *ResultLength = requiredSize;
+        return STATUS_BUFFER_OVERFLOW;
+      }
+
+      // 填充结构
+      PKEY_VALUE_PARTIAL_INFORMATION partialInfo =
+          static_cast<PKEY_VALUE_PARTIAL_INFORMATION>(KeyValueInformation);
+      partialInfo->TitleIndex = 0;
+      partialInfo->Type = REG_SZ;
+      partialInfo->DataLength = dataLength;
+      memcpy(partialInfo->Data, customGuid.c_str(), dataLength);
+
+      *ResultLength = requiredSize;
+      return STATUS_SUCCESS;
     }
 
-    // 转ANSI(单字符串)
-    int neededA = 0;
-    if (cchW > 0) {
-      // 不要用wcslen()盲取，因为REG_SZ 的数据不一定都写满?
-      // 最安全是把末尾多余空间补0
-      // 这里假设系统保证值结尾有\0
-      neededA = WideCharToMultiByte(
-          CP_ACP, 0, wData,
-          (int)(cchW - 1),  // -1 去掉终止符？
-          reinterpret_cast<LPSTR>(lpData), (lpcbData ? *lpcbData : 0), nullptr, nullptr
+    case KeyValueFullInformation: {
+      // 对于完整信息，我们需要考虑名称和数据的布局
+      ULONG nameLength = ValueName->Length;
+
+      // 计算数据偏移量（结构头 + 名称长度 + 对齐）
+      ULONG dataOffset = FIELD_OFFSET(KEY_VALUE_FULL_INFORMATION, Name) + nameLength;
+      // 对齐到4字节边界
+      dataOffset = (dataOffset + 3) & ~3;
+
+      // 计算所需总大小
+      ULONG requiredSize = dataOffset + dataLength;
+
+      // 如果只是查询大小
+      if (Length == 0) {
+        *ResultLength = requiredSize;
+        return STATUS_BUFFER_TOO_SMALL;
+      }
+
+      // 检查缓冲区是否足够
+      if (Length < requiredSize) {
+        *ResultLength = requiredSize;
+        return STATUS_BUFFER_OVERFLOW;
+      }
+
+      // 填充结构
+      PKEY_VALUE_FULL_INFORMATION fullInfo = static_cast<PKEY_VALUE_FULL_INFORMATION>(KeyValueInformation);
+      fullInfo->TitleIndex = 0;
+      fullInfo->Type = REG_SZ;
+      fullInfo->DataOffset = dataOffset;
+      fullInfo->DataLength = dataLength;
+      fullInfo->NameLength = nameLength;
+
+      // 复制名称
+      memcpy(fullInfo->Name, ValueName->Buffer, nameLength);
+
+      // 复制数据（GUID）
+      memcpy((BYTE*)fullInfo + dataOffset, customGuid.c_str(), dataLength);
+
+      *ResultLength = requiredSize;
+      return STATUS_SUCCESS;
+    }
+
+    default:
+      // 对于其他信息类型，调用原始函数
+      return NtQueryValueKey_raw(
+          KeyHandle, ValueName, KeyValueInformationClass, KeyValueInformation, Length, ResultLength
       );
-    }
-
-    if (neededA < 0 || (lpcbData && (DWORD)neededA >= *lpcbData)) {
-      // 缓冲不够
-      ret = ERROR_MORE_DATA;
-    } else if (lpData) {
-      // 写ANSI终止符
-      lpData[neededA] = 0;
-      if (lpcbData) {
-        *lpcbData = neededA;
-      }
-    }
-  } else if (dwType2 == REG_MULTI_SZ) {
-    // tmpBuf里是一个多字符串(L'\0'分隔, 双 L'\0' 结尾)
-    LPCWSTR wMulti = reinterpret_cast<LPCWSTR>(tmpBuf.data());
-    size_t cchW = cbActual / sizeof(WCHAR);
-
-    // 将“宽多字符串” 转成 “ANSI多字符串”
-    // 形如: Wide1\0Wide2\0Wide3\0\0 => Ansi1\0Ansi2\0Ansi3\0\0
-    std::string ansiMulti = WideMultiSzToAnsiMultiSz(wMulti, cchW);
-
-    DWORD needed = (DWORD)ansiMulti.size();  // 包含最后的双 \0
-
-    if (lpcbData && needed > *lpcbData) {
-      // 缓冲不够
-      ret = ERROR_MORE_DATA;
-    } else {
-      // 拷贝
-      if (lpData) {
-        memcpy(lpData, ansiMulti.data(), needed);
-      }
-      if (lpcbData) {
-        *lpcbData = needed;
-      }
-    }
-  } else {
-    // 非字符串类(含REG_BINARY, REG_DWORD, REG_QWORD, etc.), 直接复制
-    if (lpcbData && cbActual > *lpcbData) {
-      ret = ERROR_MORE_DATA;
-    } else {
-      if (lpData) {
-        memcpy(lpData, tmpBuf.data(), cbActual);
-      }
-      if (lpcbData) {
-        *lpcbData = cbActual;
-      }
-    }
   }
-
-  return ret;
 }
-LONG WINAPI RegQueryValueExW_mod(
-    HKEY hKey,
-    LPCWSTR lpValueName,
-    LPDWORD lpReserved,
-    LPDWORD lpType,
-    LPBYTE lpData,
-    LPDWORD lpcbData
+
+NTSTATUS
+NTAPI
+NtEnumerateValueKey_mod(
+    _In_ HANDLE KeyHandle,
+    _In_ ULONG Index,
+    _In_ KEY_VALUE_INFORMATION_CLASS KeyValueInformationClass,
+    _Out_opt_ PVOID KeyValueInformation,
+    _In_ ULONG Length,
+    _Out_ PULONG ResultLength
 ) {
-  wstring keyPath = GetUnifiedKeyPath(hKey);
-  // 检查是否是加密相关的注册表路径，且查询的是MachineGuid值
-  if (_wcsicmp(keyPath.data(), LR"(HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography)") == 0 &&
-      lpValueName && _wcsicmp(lpValueName, L"MachineGuid") == 0) {
-    // 获取自定义的MachineGuid
-    const wstring& customGuid = ConfigMgr::_ins_().MachineGuid;
+  // 先调用原始函数获取结果
+  NTSTATUS status = NtEnumerateValueKey_raw(
+      KeyHandle, Index, KeyValueInformationClass, KeyValueInformation, Length, ResultLength
+  );
 
-    // 设置返回的数据类型为REG_SZ（字符串）
-    if (lpType) {
-      *lpType = REG_SZ;
-    }
+  // 检查是否成功获取值信息且有自定义GUID
+  if (NT_SUCCESS(status) && !ConfigMgr::_ins_().MachineGuid.empty()) {
+    bool isMachineGuid = false;
+    bool isCryptographyKey = false;
 
-    // 计算所需的缓冲区大小（包括终止的空字符）
-    const DWORD requiredSize = static_cast<DWORD>((customGuid.length() + 1) * sizeof(wchar_t));
+    // 检查是否是Cryptography键下的枚举
+    ULONG keyNameSize = 0;
+    NTSTATUS keyStatus = NtQueryKey(KeyHandle, KeyNameInformation, nullptr, 0, &keyNameSize);
 
-    // 如果调用者只是查询所需的缓冲区大小
-    if (!lpData || (lpcbData && *lpcbData < requiredSize)) {
-      if (lpcbData) {
-        *lpcbData = requiredSize;
+    if (keyStatus == STATUS_BUFFER_TOO_SMALL || keyStatus == STATUS_BUFFER_OVERFLOW) {
+      std::vector<BYTE> buffer(keyNameSize);
+      PKEY_NAME_INFORMATION keyNameInfo = reinterpret_cast<PKEY_NAME_INFORMATION>(buffer.data());
+
+      keyStatus = NtQueryKey(KeyHandle, KeyNameInformation, keyNameInfo, keyNameSize, &keyNameSize);
+      if (NT_SUCCESS(keyStatus)) {
+        // 检查是否目标键路径
+        const WCHAR cryptoPath[] = L"\\REGISTRY\\MACHINE\\SOFTWARE\\MICROSOFT\\CRYPTOGRAPHY";
+
+        std::wstring keyPath(keyNameInfo->Name, keyNameInfo->NameLength / sizeof(WCHAR));
+        std::wstring keyPathUpper = keyPath;
+        std::transform(keyPathUpper.begin(), keyPathUpper.end(), keyPathUpper.begin(), ::towupper);
+
+        if (keyPathUpper.find(cryptoPath) != std::wstring::npos) {
+          isCryptographyKey = true;
+        }
       }
-      return ERROR_MORE_DATA;
     }
 
-    // 复制自定义GUID到输出缓冲区
-    if (lpData && lpcbData) {
-      // 复制GUID（包括结尾的空字符）
-      memcpy(lpData, customGuid.c_str(), requiredSize);
-      // 更新实际写入的字节数
-      *lpcbData = requiredSize;
-      return ERROR_SUCCESS;
+    // 如果是目标键路径，检查当前枚举的值是否为MachineGuid
+    if (isCryptographyKey && KeyValueInformation != nullptr) {
+      switch (KeyValueInformationClass) {
+        case KeyValueBasicInformation: {
+          PKEY_VALUE_BASIC_INFORMATION basicInfo =
+              static_cast<PKEY_VALUE_BASIC_INFORMATION>(KeyValueInformation);
+          if (basicInfo->NameLength >= 11 * sizeof(WCHAR)) {  // "MachineGuid"长度
+            if (_wcsnicmp(basicInfo->Name, L"MachineGuid", 11) == 0) {
+              isMachineGuid = true;
+            }
+          }
+          break;
+        }
+        case KeyValueFullInformation: {
+          PKEY_VALUE_FULL_INFORMATION fullInfo =
+              static_cast<PKEY_VALUE_FULL_INFORMATION>(KeyValueInformation);
+          if (fullInfo->NameLength >= 11 * sizeof(WCHAR)) {
+            if (_wcsnicmp(fullInfo->Name, L"MachineGuid", 11) == 0) {
+              isMachineGuid = true;
+
+              // 处理替换值
+              const std::wstring& customGuid = ConfigMgr::_ins_().MachineGuid;
+              ULONG dataLength = (customGuid.length() + 1) * sizeof(WCHAR);
+
+              // 检查缓冲区是否足够
+              if (Length >= fullInfo->DataOffset + dataLength) {
+                // 更新数据长度
+                fullInfo->DataLength = dataLength;
+                fullInfo->Type = REG_SZ;
+
+                // 复制自定义GUID数据
+                memcpy((BYTE*)fullInfo + fullInfo->DataOffset, customGuid.c_str(), dataLength);
+
+                // 更新结果长度
+                *ResultLength = fullInfo->DataOffset + dataLength;
+              }
+            }
+          }
+          break;
+        }
+        case KeyValuePartialInformation: {
+          // Partial信息没有名称，我们需要额外查询以确定当前枚举的值
+          UNICODE_STRING valueName;
+          valueName.Buffer = NULL;
+          valueName.Length = 0;
+          valueName.MaximumLength = 0;
+
+          // 先获取值名称大小
+          ULONG nameLength = 0;
+          NTSTATUS nameStatus =
+              NtEnumerateValueKey(KeyHandle, Index, KeyValueBasicInformation, NULL, 0, &nameLength);
+
+          if (nameStatus == STATUS_BUFFER_TOO_SMALL || nameStatus == STATUS_BUFFER_OVERFLOW) {
+            std::vector<BYTE> nameBuffer(nameLength);
+            PKEY_VALUE_BASIC_INFORMATION nameInfo =
+                reinterpret_cast<PKEY_VALUE_BASIC_INFORMATION>(nameBuffer.data());
+
+            nameStatus = NtEnumerateValueKey(
+                KeyHandle, Index, KeyValueBasicInformation, nameInfo, nameLength, &nameLength
+            );
+
+            if (NT_SUCCESS(nameStatus)) {
+              if (nameInfo->NameLength >= 11 * sizeof(WCHAR)) {
+                if (_wcsnicmp(nameInfo->Name, L"MachineGuid", 11) == 0) {
+                  isMachineGuid = true;
+
+                  // 处理PartialInformation替换
+                  PKEY_VALUE_PARTIAL_INFORMATION partialInfo =
+                      static_cast<PKEY_VALUE_PARTIAL_INFORMATION>(KeyValueInformation);
+                  const std::wstring& customGuid = ConfigMgr::_ins_().MachineGuid;
+                  ULONG dataLength = (customGuid.length() + 1) * sizeof(WCHAR);
+
+                  // 检查缓冲区是否足够
+                  if (Length >= FIELD_OFFSET(KEY_VALUE_PARTIAL_INFORMATION, Data) + dataLength) {
+                    // 更新数据长度和类型
+                    partialInfo->DataLength = dataLength;
+                    partialInfo->Type = REG_SZ;
+
+                    // 复制自定义GUID数据
+                    memcpy(partialInfo->Data, customGuid.c_str(), dataLength);
+
+                    // 更新结果长度
+                    *ResultLength = FIELD_OFFSET(KEY_VALUE_PARTIAL_INFORMATION, Data) + dataLength;
+                  }
+                }
+              }
+            }
+          }
+          break;
+        }
+      }
     }
   }
 
-  // 对于其他键或值，使用原始函数处理
-  return RegQueryValueExW_raw(hKey, lpValueName, lpReserved, lpType, lpData, lpcbData);
+  return status;
 }
 void setHook() {
   DetoursHooker hooker;
   hooker.endeque({
 
-      {&RegQueryValueExA_raw, &RegQueryValueExA_mod},
-      {&RegQueryValueExW_raw, &RegQueryValueExW_mod},
+      {&NtQueryValueKey_raw, &NtQueryValueKey_mod},
+      {&NtEnumerateValueKey_raw, &NtEnumerateValueKey_mod},
   });
 
   hooker.setHook();
@@ -262,9 +333,9 @@ extern "C" __declspec(dllexport) BOOL APIENTRY DllMain(HMODULE hModule, DWORD dw
 #endif
     DisableThreadLibraryCalls(hModule);
     try {
-       ConfigMgr::_ins_();
+      ConfigMgr::_ins_();
       // RegHandlerMgr::_ins_();
-        setHook();
+      setHook();
     } catch (const std::exception& e) {
       MessageBoxA(nullptr, e.what(), "Exception occured", MB_ICONERROR);
       exit(-1);

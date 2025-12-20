@@ -20,7 +20,17 @@ void dbgThrow(const string& what) {
 #endif
 }
 class ConfigMgr {
-  string configContent_;
+  string configContent_ = R"(
+# TOP_PROCESS_NAME is the processName of the process loading extBoot.dll firstly
+
+[[processName2dllList]]
+processName="${TOP_PROCESS_NAME}"
+dllList = ["/.*/"]
+
+[[processName2dllList]]
+processName="/.*/"
+dllList = ["yourDll.dll"]
+)";
   toml::table config_;
   string currExeName_ = [] {
     string buf(MAX_PATH, 0);
@@ -53,10 +63,11 @@ class ConfigMgr {
           currDir.filename() != "App" && fs::exists(currDir / "App") && fs::is_directory(currDir / "App");
       if (isInHome) {
         // 停止查找
-        throw fs::filesystem_error(
-            format("{} not found in the ancestor dir of the {}", configFileName.string(), currExeName_),
-            config_path, std::make_error_code(std::errc::no_such_file_or_directory)
-        );
+        // throw fs::filesystem_error(
+        //    format("{} not found in the ancestor dir of the {}", configFileName.string(), currExeName_),
+        //    config_path, std::make_error_code(std::errc::no_such_file_or_directory)
+        //);
+        return config_path;
       }
       currDir = currDir.parent_path();  // 找不到就回退一级目录
     }
@@ -67,13 +78,14 @@ class ConfigMgr {
     fs::path config_path = getConfigFilePath();
     ifstream ifs(config_path);
     if (!ifs) {
-      throw fs::filesystem_error(
-          format("Please make sure the {} exists", config_path.string()).data(), config_path,
-          make_error_code(errc::no_such_file_or_directory)
-      );
+      logger().info("use built-in cfg because cannot load {}", config_path.string());
+      // throw fs::filesystem_error(
+      //     format("Please make sure the {} exists", config_path.string()).data(), config_path,
+      //     make_error_code(errc::no_such_file_or_directory)
+      //);
+    } else {
+      configContent_ = string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
     }
-
-    configContent_ = string(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
     preprocConfigContent();
   }
 

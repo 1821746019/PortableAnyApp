@@ -14,7 +14,7 @@ export class RegGuardConfig {
   RegGuardConfig& operator=(const RegGuardConfig&) = delete;
   RegGuardConfig(RegGuardConfig&&) = delete;
   RegGuardConfig& operator=(RegGuardConfig&&) = delete;
-  static  GuardConfig& _ins_() {
+  inline  static  GuardConfig& _ins_() {
     if (ins_)
       return *ins_;
 

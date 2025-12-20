@@ -57,25 +57,91 @@ class AppHiveMgr {
     return *ins_;
   }
 };
+// 在调用RegLoadKeyW之前添加这段代码
+BOOL AdjustPrivilege(LPCTSTR lpszPrivilege) {
+  HANDLE hToken;
+  TOKEN_PRIVILEGES tp;
+  LUID luid;
+
+  if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
+    return FALSE;
+
+  if (!LookupPrivilegeValue(NULL, lpszPrivilege, &luid)) {
+    CloseHandle(hToken);
+    return FALSE;
+  }
+
+  tp.PrivilegeCount = 1;
+  tp.Privileges[0].Luid = luid;
+  tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+  if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), NULL, NULL)) {
+    CloseHandle(hToken);
+    return FALSE;
+  }
+
+  CloseHandle(hToken);
+  return TRUE;
+}
 
 export {
+  HKEY MountAppHive(const std::wstring& hivePath) {
+    // 获取当前可执行文件路径
+    std::wstring exePath = selfExePath();
+    // 提取可执行文件名
+    std::wstring exeName = std::filesystem::path(exePath).filename().wstring();
+
+    std::wstring toSafeExeDir = selfExeDir().wstring();
+    // 替换所有反斜杠为正斜杠
+    for (size_t pos = toSafeExeDir.find(L'\\'); pos != std::wstring::npos;
+         pos = toSafeExeDir.find(L'\\', pos + 1)) {
+      toSafeExeDir.replace(pos, 1, L"/");
+    }
+    // 构建注册表路径
+    std::wstring regKeyPath = exeName + L"_" + toSafeExeDir;
+
+    // 检查是否已经挂载（先尝试打开注册表项）
+    HKEY hKey = NULL;
+    LONG result = RegOpenKeyExW(HKEY_USERS, regKeyPath.c_str(), 0, KEY_READ, &hKey);
+
+    // 如果已挂载，则直接返回打开的hKey;
+    if (result == ERROR_SUCCESS) {
+      return hKey;
+    }
+    // 然后在MountAppHive函数中，在调用RegLoadKeyW前启用这些特权
+    if (!AdjustPrivilege(SE_RESTORE_NAME) || !AdjustPrivilege(SE_BACKUP_NAME)) {
+      std::wcerr << L"无法获取必要特权，最后错误: " << GetLastError() << std::endl;
+      return NULL;
+    }
+    // 挂载注册表文件（需要管理员权限）
+    // 创建挂载键防止不存在
+    //HKEY _;
+    //auto AppHiveKeyCreateResult = RegCreateKeyExW(
+    //    HKEY_USERS, L"AppHive", 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, nullptr, &_,
+    //    nullptr
+    //);
+    result = RegLoadKeyW(HKEY_USERS, regKeyPath.c_str(), hivePath.c_str());
+    if (result != ERROR_SUCCESS) {
+      std::wcerr << L"挂载注册表文件失败，错误码: " << result << std::endl;
+      return NULL;
+    }
+
+    // 打开挂载的注册表项并返回句柄
+    result = RegOpenKeyExW(HKEY_USERS, regKeyPath.c_str(), 0, KEY_ALL_ACCESS, &hKey);
+    if (result != ERROR_SUCCESS) {
+      std::wcerr << L"打开挂载的注册表项失败，错误码: " << result << std::endl;
+      return NULL;
+    }
+
+    return hKey;
+  }
   HKEY getCachedAppHiveRootKey() {
     // return AppHiveMgr::_ins_().hKey();
 
     static HKEY hiveRootKey = [] {
       HKEY ret;
       fs::path hivePath = selfDir() / "AppRegHive";
-      // 使用filesystem_error提供更详细的错误信息
-      if (!fs::exists(hivePath)) {
-        throw fs::filesystem_error(
-            "AppRegHive not found", hivePath, std::make_error_code(std::errc::no_such_file_or_directory)
-        );
-      }
-      auto status = RegLoadAppKeyW(hivePath.c_str(), &ret, KEY_ALL_ACCESS, REG_PROCESS_APPKEY, 0);
-      if (status != ERROR_SUCCESS) {
-        throw std::runtime_error("Failed to load AppRegHive. Please check if it has been loaded in other exe"
-        );
-      }
+      ret = MountAppHive(hivePath);
       return ret;
     }();
     return hiveRootKey;
@@ -113,12 +179,12 @@ export {
         nullptr, &hKeyClasses, nullptr
     );
     LSTATUS resultUsers = RegCreateKeyExW(
-        getCachedAppHiveRootKey(), L"HKEY_USERS", 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, nullptr,
-        &hKeyUsers, nullptr
+        getCachedAppHiveRootKey(), L"HKEY_USERS", 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS,
+        nullptr, &hKeyUsers, nullptr
     );
     LSTATUS resultCurrentConfig = RegCreateKeyExW(
-        getCachedAppHiveRootKey(), L"HKEY_CURRENT_CONFIG", 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS,
-        nullptr, &hKeyCurrentConfig, nullptr
+        getCachedAppHiveRootKey(), L"HKEY_CURRENT_CONFIG", 0, nullptr, REG_OPTION_NON_VOLATILE,
+        KEY_ALL_ACCESS, nullptr, &hKeyCurrentConfig, nullptr
     );
     if (resultMachine != ERROR_SUCCESS || resultUser != ERROR_SUCCESS || resultClasses != ERROR_SUCCESS ||
         resultUsers != ERROR_SUCCESS || resultCurrentConfig != ERROR_SUCCESS) {

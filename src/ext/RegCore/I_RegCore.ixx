@@ -11,16 +11,19 @@ import func2hook.kernel.raw;
 import ConfigMgr;
 import selfInfo;
 import RegHandlerMgr;
+import _common.redirect;
 using namespace std;
 void setHook() {
   //{&RtlInitUnicodeString_raw, &RtlInitUnicodeString_mod},
   //{&RtlInitUnicodeStringEx_raw, &RtlInitUnicodeStringEx_mod},
   DetoursHooker hooker;
-  // hooker.endeque({
+  //hooker.endeque({
+  //    //{&NtOpenKey_raw, &NtOpenKey_mod},
 
-  //    {&NtOpenKey_raw, &NtOpenKey_mod},
   //    {&NtOpenKeyEx_raw, &NtOpenKeyEx_mod},
   //    {&NtCreateKey_raw, &NtCreateKey_mod},
+  //    {&NtQueryValueKey_raw, &NtQueryValueKey_mod},
+  //    {&NtEnumerateValueKey_raw, &NtEnumerateValueKey_mod},
   //});
 
   hooker.endeque({
@@ -59,12 +62,15 @@ extern "C" __declspec(dllexport) BOOL APIENTRY DllMain(HMODULE hModule, DWORD dw
     // freopen("CONOUT$", "w", stdout);
 #endif
     DisableThreadLibraryCalls(hModule);
-    // 子进程不进行hook，因为hive只能被一个进程加载
 
     try {
       ConfigMgr::_ins_(selfDir() / (std::string(BS_TARGET_NAME) + ".toml"));
       RegHandlerMgr::_ins_();
-      // setHook();
+      setHook();
+      wstring path = LR"(HKEY_LOCAL_MACHINE\Software\Microsoft\LanguageOverlay\OverlayPackages\en-US)";
+      if (!isNeedRedirection(path)) {
+        cout << "not need redirection" << endl;
+      }
     } catch (const std::exception& e) {
       MessageBoxA(nullptr, e.what(), "Exception occured", MB_ICONERROR);
     }

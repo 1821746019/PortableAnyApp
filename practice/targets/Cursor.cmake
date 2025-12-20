@@ -8,8 +8,8 @@ get_filename_component(appHomeDir ${dstExeDir} DIRECTORY)
 
 
 bs_add_lib(${currTarget} SHARED _.cpp)
-set(booter RegCore)
-set(extList )
+set(booter extBoot)
+set(extList RegCore SubProcGuard)
 set(depList ${booter} ${extList})
 target_link_libraries(${currTarget} PRIVATE ${depList})
 add_custom_command(TARGET ${currTarget} POST_BUILD

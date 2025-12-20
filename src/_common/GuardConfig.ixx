@@ -91,6 +91,7 @@ export class GuardConfig {
   // enum
   Key* open(std::wstring path, Key** keyContext = nullptr) {
     // if (root_ == nullptr) {throw runtime_error("PseudoHive: root is null");}
+
     Key* currKey = root_;
     wchar_t* context = nullptr;
     wchar_t* tok = tolower(wcstok_s(path.data(), L"\\", &context));

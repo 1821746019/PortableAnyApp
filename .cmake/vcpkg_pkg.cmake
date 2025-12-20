@@ -57,4 +57,50 @@ function(execInOtherTriplet triplet proc)
 
 endfunction()
 
-
+function(execInSpecialPath path mode proc) #mode: replace/append
+    # 将path中的反斜杠替换为正斜杠
+    string(REPLACE "\\" "/" normalized_path "${path}")
+    
+    # 定义需要修改的变量列表
+    set(to_modify_list 
+        "CMAKE_FIND_ROOT_PATH"
+        "CMAKE_LIBRARY_PATH"
+        "CMAKE_PREFIX_PATH"
+        "CMAKE_PROGRAM_PATH"
+        "VCPKG_CMAKE_FIND_ROOT_PATH"
+    )
+    
+    # 备份并修改每个变量
+    foreach(to_modify ${to_modify_list})
+        # 备份原始值
+        set(${to_modify}_BACKUP "${${to_modify}}" CACHE STRING "Backup of the original ${to_modify}" FORCE)
+        
+        # 根据模式修改变量
+        if("${mode}" STREQUAL "replace")
+            # replace模式：替换原值为新path
+            set(${to_modify} "${normalized_path}")
+            set(${to_modify} "${normalized_path}" CACHE STRING "Set ${to_modify} to new path" FORCE)
+        elseif("${mode}" STREQUAL "append")
+            # append模式：将新path追加到原值
+            if(${to_modify})
+                set(${to_modify} "${${to_modify}};${normalized_path}" CACHE STRING "Append new path to ${to_modify}" FORCE)
+            else()
+                set(${to_modify} "${normalized_path}" CACHE STRING "Set ${to_modify} to new path" FORCE)
+            endif()
+        else()
+            message(FATAL_ERROR "Unknown mode: ${mode}. Supported modes are 'replace' and 'append'.")
+        endif()
+        
+        # 输出结果以检查操作是否成功
+        #message(STATUS "Updated ${to_modify}: ${${to_modify}}")
+    endforeach()
+    
+    # 执行传入的proc指令
+    cmake_language(CALL ${proc})
+    
+    # 恢复原始变量值
+    foreach(to_modify ${to_modify_list})
+    set(${to_modify} "${${to_modify}_BACKUP}")
+        set(${to_modify} "${${to_modify}_BACKUP}" CACHE STRING "Restore original ${to_modify}" FORCE)
+    endforeach()
+endfunction()

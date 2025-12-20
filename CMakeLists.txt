@@ -44,8 +44,31 @@ endif()
 
 #set(VCPKG_OVERLAY_TRIPLETS "x64-win-static")
 # pkg dep
+#spdlog
+#add_definitions(-DSPDLOG_USE_STD_FORMAT=ON) #使用std::format而不是依赖fmt库
 
-find_package(Qt6 COMPONENTS Core Network Widgets  Gui  REQUIRED)
+# 使用CMake的作用域来自动恢复变量
+#set(_OLD_CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH}")
+#set(CMAKE_PREFIX_PATH "D:/environment/cpp/Qt/Qt6/_cur" CACHE STRING "首选路径前缀" FORCE)
+function(_findQt)
+  find_package(Qt6 COMPONENTS Core Network Widgets Gui REQUIRED)
+endfunction()
+#execInSpecialPath("D:/environment/cpp/Qt/Qt6/_cur" "replace" _findQt)
+
+#set(CMAKE_PREFIX_PATH "${_OLD_CMAKE_PREFIX_PATH}" CACHE STRING "首选路径前缀" FORCE)
+#unset(_OLD_CMAKE_PREFIX_PATH)
+find_package(Qt6 
+    COMPONENTS Core Network Widgets Gui 
+    REQUIRED
+    PATHS "D:/environment/cpp/Qt/Qt6/_cur"
+    NO_DEFAULT_PATH
+)
+
+find_package(Qt5 
+    COMPONENTS Core Network Widgets Gui 
+    REQUIRED
+)
+
 #detours
 find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")
 find_library(DETOURS_LIBRARY detours REQUIRED)

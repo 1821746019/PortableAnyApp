@@ -46,8 +46,8 @@ export {
     std::wstring pathAppName, pathCmdline;
     std::wsmatch matchAppName, matchCmdline;
     static std::wregex pattern(LR"(([a-zA-Z]:\\\S+|"[a-zA-Z]:\\.*?"))");
-    if (!std::regex_search(std::wstring(lpApplicationName), matchAppName, pattern))
-      wchar_t new_path[MAX_PATH + 1];
+    //if (!std::regex_search(std::wstring(lpApplicationName), matchAppName, pattern))
+    wchar_t new_path[MAX_PATH + 1];
     auto path_judge = PathJudge::_ins_();
     if (path_judge->judgeAndRedirect(lpApplicationName, new_path, (int)std::size(new_path))) {
       lpApplicationName = new_path;

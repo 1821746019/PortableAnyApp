@@ -11,7 +11,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/../external)
 
 set(exe_name testApp)
 add_executable(${exe_name} testApp.cpp)
-target_link_libraries(${exe_name} PRIVATE ext_common)
+target_link_libraries(${exe_name} PRIVATE ext_common )
 #target_link_libraries(${exe_name} PRIVATE Boost::spirit)
 #target_include_directories(${exe_name} PRIVATE ${Live++_INCLUDE_DIRS})
 

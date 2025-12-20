@@ -29,7 +29,7 @@ export class ConfigMgr {
   }
   toml::table config_;
   void initOtherConfig() {
-    auto& reg = RegGuardConfig::_ins_();
+    auto& regGuardConfig = RegGuardConfig::_ins_();
     for (auto& [k, v] : *config_["reg"].as_table()) {
       // std::print("{} => ", k.data());
       std::cout << config_ << '\n';
@@ -37,7 +37,7 @@ export class ConfigMgr {
       //   std::print("{} => {}", k1.data(),v1.value<std::string>()->data());
       // }
       // std::print("***\n");
-      auto key = reg.create(brv::strConvert(k));
+      auto key = regGuardConfig.create(brv::strConvert(k));
       auto data = v.as_table()->at("redirect").value_exact<std::wstring>()->data();
       key->keyInfo->redirect = std::make_unique<std::wstring>(data);
     }

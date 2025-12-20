@@ -14,17 +14,17 @@ using namespace std;
 namespace fs = filesystem;
 #define configMgr ConfigMgr::_ins_()
 
-const wstring& defautlConfig =
+const wstring& defaultConfig =
     LR"(
 # EXE_DIR is a bult-in variable
 [AppData]
 only_self_exe = true
 all= '''${EXE_DIR}\..\Data'''
-Roaming = '''${EXE_DIR}\..\Data\Roaming'''
+#Roaming = '''${EXE_DIR}\..\Data\Roaming'''
 #Local = '''${EXE_DIR}\..\Data\Local'''
 )";
 
-std::wstring GetCallingModule() {
+std::wstring GetCallingModule(int skip_frame = 1) {
   // 初始化符号处理
   SymInitialize(GetCurrentProcess(), NULL, TRUE);
 
@@ -73,7 +73,7 @@ std::wstring GetCallingModule() {
     }
 
     // 跳过第一个帧（是我们自己）
-    if (i < 1)
+    if (i < skip_frame)
       continue;
 
     // 获取模块信息
@@ -85,11 +85,11 @@ std::wstring GetCallingModule() {
 
       // 如果模块不是当前模块，就是我们要找的调用者
       if (frameModule != currentModule) {
-        WCHAR moduleName[MAX_PATH] = {0};
-        if (GetModuleFileNameW(frameModule, moduleName, MAX_PATH)) {
-          WCHAR* fileName = wcsrchr(moduleName, L'\\');
+        WCHAR modulePath[MAX_PATH] = {0};
+        if (GetModuleFileNameW(frameModule, modulePath, MAX_PATH)) {
           SymCleanup(GetCurrentProcess());
-          return fileName ? (fileName + 1) : moduleName;
+          WCHAR* fileName = wcsrchr(modulePath, L'\\');
+          return modulePath;  // fileName ? (fileName + 1) : modulePath;
         }
       }
     }
@@ -97,6 +97,14 @@ std::wstring GetCallingModule() {
 
   SymCleanup(GetCurrentProcess());
   return L"未知模块";
+}
+bool isNeedRedirection() {
+  std::wstring callerModulePath = GetCallingModule(2);  // 多了一层调用，skip_frame相应加1
+  std::wstring exeDir = selfExeDir();
+  if (_wcsnicmp(callerModulePath.data(), exeDir.data(), exeDir.size())) {  // 和exe同级的dll的调用，需重定向
+    return true;
+  }
+  return false;
 }
 class ConfigMgr {
  public:
@@ -113,7 +121,7 @@ class ConfigMgr {
       configContent = wstring(istreambuf_iterator<char>(ifs), istreambuf_iterator<char>());
     } else {
       cout << "Config file not found, using default config." << endl;
-      configContent = defautlConfig;
+      configContent = defaultConfig;
     }
     // replace the built-in variable
     wstring exe_dir = selfExeDir().wstring();
@@ -154,7 +162,7 @@ decltype(&SHGetFolderPathW) SHGetFolderPathW_raw = &SHGetFolderPathW;
 
 HRESULT WINAPI SHGetFolderPathW_mod(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPWSTR pszPath) {
   int i = 0;
-  if (configMgr.only_self_exe && !GetCallingModule().ends_with(L".exe")) {
+  if (configMgr.only_self_exe && isNeedRedirection()) {
     return SHGetFolderPathW_raw(hwnd, csidl, hToken, dwFlags, pszPath);
   }
   if (configMgr.all.size()) {
@@ -194,51 +202,75 @@ HRESULT WINAPI SHGetFolderPathW_mod(HWND hwnd, int csidl, HANDLE hToken, DWORD d
 }
 decltype(&SHGetKnownFolderPath) SHGetKnownFolderPath_raw =
     &SHGetKnownFolderPath;  // GetProcAddress(GetModuleHandleA("shell32.dll"), "SHGetKnownFolderPath");
+// 辅助函数，用于替换 KnownFolder 路径
+HRESULT ReplaceKnownFolderPath(
+    PWSTR* ppszPath,
+    const wstring& target,
+    const wstring& newBasePath,
+    bool checkAfter = true
+) {
+  auto found = wcsistr(*ppszPath, target.data());
+  if (!found) {
+    return S_OK;
+  }
+
+  // 检查后续字符（如果需要）
+  if (checkAfter && !(found[target.size()] == L'\\' || found[target.size()] == 0)) {
+    return S_OK;
+  }
+
+  // 保存后缀路径
+  wstring suffix = found + target.size();
+  // 构建新路径
+  wstring newPath = newBasePath + suffix;
+
+  // 保存旧指针
+  PWSTR oldPath = *ppszPath;
+
+  // 分配新内存
+  size_t newSize = (newPath.length() + 1) * sizeof(wchar_t);
+  *ppszPath = (PWSTR)CoTaskMemAlloc(newSize);
+  if (!*ppszPath) {
+    *ppszPath = oldPath;
+    return E_OUTOFMEMORY;
+  }
+
+  // 复制新路径并释放旧内存
+  wcscpy_s(*ppszPath, newPath.length() + 1, newPath.c_str());
+  CoTaskMemFree(oldPath);
+
+  return S_OK;
+}
+
 HRESULT WINAPI
 SHGetKnownFolderPath_mod(REFKNOWNFOLDERID rfid, DWORD dwFlags, HANDLE hToken, PWSTR* ppszPath) {
-  if (configMgr.only_self_exe && !GetCallingModule().ends_with(L".exe")) {
+  if (configMgr.only_self_exe && isNeedRedirection()) {
     return SHGetKnownFolderPath_raw(rfid, dwFlags, hToken, ppszPath);
   }
-  if (configMgr.all.size()) {
-    HRESULT hr = SHGetKnownFolderPath_raw(rfid, dwFlags, hToken, ppszPath);
-    if (!SUCCEEDED(hr))
-      return hr;
 
+  HRESULT hr = SHGetKnownFolderPath_raw(rfid, dwFlags, hToken, ppszPath);
+  if (!SUCCEEDED(hr))
+    return hr;
+
+  if (configMgr.all.size()) {
     static const wstring& target = LR"(\AppData)";
-    auto found = wcsistr(*ppszPath, target.data());
-    if (found && (found[target.size()] == L'\\' || found[target.size()] == 0)) {
-      wcscpy_s(*ppszPath, MAX_PATH, configMgr.all.data());
-    }
-    return hr;
+    hr = ReplaceKnownFolderPath(ppszPath, target, configMgr.all, false);  // 与原函数保持一致
   } else if (configMgr.Roaming.size()) {
-    HRESULT hr = SHGetKnownFolderPath_raw(rfid, dwFlags, hToken, ppszPath);
-    if (!SUCCEEDED(hr))
-      return hr;
     static const wstring& target = LR"(\AppData\Roaming)";
-    auto found = wcsistr(*ppszPath, target.data());
-    if (found && (found[target.size()] == L'\\' || found[target.size()] == 0)) {
-      wcscpy_s(*ppszPath, MAX_PATH, configMgr.Roaming.data());
-    }
-    return hr;
+    hr = ReplaceKnownFolderPath(ppszPath, target, configMgr.Roaming);
   } else if (configMgr.Local.size()) {
-    HRESULT hr = SHGetKnownFolderPath_raw(rfid, dwFlags, hToken, ppszPath);
-    if (!SUCCEEDED(hr))
-      return hr;
     static const wstring& target = LR"(\AppData\Local)";
-    auto found = wcsistr(*ppszPath, target.data());
-    if (found && (found[target.size()] == L'\\' || found[target.size()] == 0)) {
-      wcscpy_s(*ppszPath, MAX_PATH, configMgr.Local.data());
-    }
-    return hr;
+    hr = ReplaceKnownFolderPath(ppszPath, target, configMgr.Local);
   }
-  return SHGetKnownFolderPath_raw(rfid, dwFlags, hToken, ppszPath);
+
+  return hr;
 }
 
 void setHook() {
   DetoursHooker hooker;
   hooker.endeque({
       {&SHGetFolderPathW_raw, &SHGetFolderPathW_mod},
-      //{&SHGetKnownFolderPath_raw, &SHGetKnownFolderPath_mod},
+      {&SHGetKnownFolderPath_raw, &SHGetKnownFolderPath_mod},
 
   });
   hooker.setHook();

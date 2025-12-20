@@ -23,7 +23,7 @@
     if(UPDATE_LAUNCH_VS_JSON_CURRENT_DIR)
         set(currentDirFlag "-c ${UPDATE_LAUNCH_VS_JSON_CURRENT_DIR}")
     endif()
-    execute_process(COMMAND python ${PROJECT_SOURCE_DIR}/tools/update_launch_vs_json.py 
+    execute_process(COMMAND  python ${PROJECT_SOURCE_DIR}/tools/update_launch_vs_json.py 
             ${PROJECT_SOURCE_DIR}/.vs/launch.vs.json 
             ${projectTarget} 
             ${exePath} 

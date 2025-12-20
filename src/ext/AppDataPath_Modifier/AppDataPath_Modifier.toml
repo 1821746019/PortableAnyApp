@@ -1,0 +1,6 @@
+﻿# EXE_DIR is a bult-in variable
+[AppData]
+only_self_exe = true
+all= '''${EXE_DIR}\..\Data'''
+#Roaming = '''${EXE_DIR}\..\Data\Roaming'''
+#Local = '''${EXE_DIR}\..\Data\Local'''
