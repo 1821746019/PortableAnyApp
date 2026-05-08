@@ -1,13 +1,13 @@
 ﻿get_filename_component(currFileStem ${CMAKE_CURRENT_LIST_FILE} NAME_WLE)
 set(currTarget "_practice-${currFileStem}")
 
-set(dstExePath [[D:\Program\Productivity\Utils\PixPin\_curr\App\PixPin.exe]])
+set(dstExePath [[D:\Program\Productivity\Utils\PixPin\PixPin_v2.2\App\PixPin.exe]])
 set(args "")
 get_filename_component(dstExeDir "${dstExePath}" DIRECTORY)
 get_filename_component(appHomeDir ${dstExeDir} DIRECTORY)
 bs_add_lib(${currTarget} SHARED _.cpp)
-set(extList RegCore blockNetAtSocketLayer)
-set(depList extBoot ${extList})
+set(extList HijackResponseQt5)
+set(depList ${extList})
 target_link_libraries(${currTarget} PRIVATE ${depList})
 add_custom_command(TARGET ${currTarget} POST_BUILD
     # copy the extBoot.dll to the target directory
