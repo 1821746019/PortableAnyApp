@@ -15,7 +15,7 @@ foreach(dll ${dlls})
 	if(${dll} IN_LIST lib_link_excluded_list)
 		continue()
 	endif()
-	target_link_libraries(${dll}Forged PRIVATE  std ${dll}.lib)
+	target_link_libraries(${dll}Forged PRIVATE ${dll}.lib)
 endforeach()
 
 #bs_add_lib("kernel32new" "kernel32new.def" "kernel32new.ixx")

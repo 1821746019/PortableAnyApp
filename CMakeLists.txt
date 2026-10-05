@@ -1,8 +1,8 @@
 ﻿# CMakeList.txt : CMake project for PortableMyApp, include source and define
 # project specific logic here.
 #
-cmake_minimum_required (VERSION 3.28)
-
+cmake_minimum_required (VERSION 3.30)
+set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "0e5b6991-d74f-4b3d-a41c-cf096e0b2508")
 
 project(PortableAnyApp)
 
@@ -12,6 +12,7 @@ include(.cmake/.cmake)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
+set(CMAKE_CXX_MODULE_STD ON)
 
 #解决Qt app定义了_UTF8而std模块没有导致有：Possible incompatible environment while importing module 'std': _UTF8 is defined in current command line and not in module command line
 add_compile_options(-D_UTF8)#定义_UTF8宏?
@@ -75,7 +76,6 @@ find_library(DETOURS_LIBRARY detours REQUIRED)
 
 # Add source to this project's executable.
 add_subdirectory(external)
-link_libraries(std)
 
 
 

@@ -10,6 +10,7 @@
       // 告诉 CMake 使用 vcpkg 的工具链
       "toolchainFile": "D:/environment/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
+        "CMAKE_EXPERIMENTAL_CXX_IMPORT_STD": "0e5b6991-d74f-4b3d-a41c-cf096e0b2508",
         //"Qt6_DIR": "D:\\environment\\cpp\\Qt\\Qt6\\_cur",
         "CMAKE_INCLUDE_CURRENT_DIR": "ON",
         //"CMAKE_PREFIX_PATH": "D:\\environment\\cpp\\vcpkg\\installed",
