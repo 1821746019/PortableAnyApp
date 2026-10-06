@@ -8,7 +8,7 @@ project(PortableAnyApp)
 
 #需在project后include，否则会有一些变量未初始化，e.CMAKE_SIZEOF_VOID_P
 include(.cmake/.cmake)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(CMAKE_CXX_SCAN_FOR_MODULES ON)
@@ -20,6 +20,9 @@ add_compile_options(-D_UTF8)#定义_UTF8宏?
 add_compile_definitions($<$<CONFIG:Debug>:BS_DBG>)
 #if("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
 if(MSVC)
+  # 补齐 CMake File-API 缺失的 IFC 检索路径，供 VS IntelliSense (EDG) 索引
+  add_compile_options(/ifcSearchDir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/__cmake_cxx23.dir")
+ 
   # 多线程编译
   add_compile_options(/MP)
   # code elimination for release build
