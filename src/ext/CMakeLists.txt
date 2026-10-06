@@ -54,16 +54,19 @@ foreach(e ${all_targets})
     add_dependencies(build_ext ${e})
     # ext 默认都连接versionForge、winmmForge库以供单独使用
     target_link_libraries(${e} PRIVATE versionForged winmmForged)
-    # generate toml file for each ext if not exist
-    file(TOUCH ${CMAKE_CURRENT_SOURCE_DIR}/${e}/${e}.toml)
+    set(ext_toml ${CMAKE_CURRENT_SOURCE_DIR}/${e}/${e}.toml)
     add_custom_command(TARGET ${e} POST_BUILD
         # copy dll to install folder
 
         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:${e}>
         ${PROJECT_SOURCE_DIR}/install/${BS_ARCH}/Ext/${e}$<$<STREQUAL:${BS_ARCH},x86>:.${BS_ARCH}>.dll
-
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/${e}/${e}.toml ${PROJECT_SOURCE_DIR}/install/${BS_ARCH}/Ext/${e}.toml
     )
+    # toml 由开发者按需自建，不自动生成；新建后需重跑 configure 才会被拷贝
+    if(EXISTS ${ext_toml})
+        add_custom_command(TARGET ${e} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${ext_toml} ${PROJECT_SOURCE_DIR}/install/${BS_ARCH}/Ext/${e}.toml
+        )
+    endif()
 endforeach()
 
 
