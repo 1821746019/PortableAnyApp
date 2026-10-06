@@ -1,4 +1,4 @@
-﻿module;
+module;
 #include <cwchar>
 #include <windows.h>
 export module strUtils;

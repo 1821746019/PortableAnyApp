@@ -1,4 +1,4 @@
-﻿get_filename_component(currFileStem ${CMAKE_CURRENT_LIST_FILE} NAME_WLE)
+get_filename_component(currFileStem ${CMAKE_CURRENT_LIST_FILE} NAME_WLE)
 set(currTarget "_practice-${currFileStem}")
 
 set(dstExePath [[D:\Program\Productivity\Everywhere\App\Everywhere.exe]])

@@ -1,4 +1,4 @@
-﻿module;
+module;
 #include <WinSock2.h>
 
 export module func2hook.maybe;

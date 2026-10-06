@@ -1,4 +1,4 @@
-﻿#include <windows.h>
+#include <windows.h>
 #include <shobjidl.h> 
 #include <vector>
 #include <string>

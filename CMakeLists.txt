@@ -1,4 +1,4 @@
-﻿# CMakeList.txt : CMake project for PortableMyApp, include source and define
+# CMakeList.txt : CMake project for PortableMyApp, include source and define
 # project specific logic here.
 #
 cmake_minimum_required (VERSION 3.30)
@@ -16,7 +16,9 @@ set(CMAKE_CXX_MODULE_STD ON)
 
 #解决Qt app定义了_UTF8而std模块没有导致有：Possible incompatible environment while importing module 'std': _UTF8 is defined in current command line and not in module command line
 add_compile_options(-D_UTF8)#定义_UTF8宏?
-#add_compile_options(/utf-8)
+# 源码一律按 UTF-8 读取，取代依赖 BOM 的方式；不含 /execution-charset，窄字面量的
+# 执行字符集仍为系统 ANSI(CP936)，与历史行为逐字节一致
+add_compile_options(/source-charset:utf-8)
 add_compile_definitions($<$<CONFIG:Debug>:BS_DBG>)
 #if("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
 if(MSVC)

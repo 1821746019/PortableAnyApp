@@ -1,4 +1,4 @@
-﻿module;
+module;
 #include <windows.h>
 
 export module func2hook.kernelbase;

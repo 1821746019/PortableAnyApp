@@ -1,4 +1,4 @@
-﻿function(update_launch_vs_json targetName exePath)
+function(update_launch_vs_json targetName exePath)
     # Parse optional arguments
     set(options "")
     set(oneValueArgs "ARGS" "CURRENT_DIR")

@@ -1,4 +1,4 @@
-﻿//#pragma once
+//#pragma once
 //
 //#ifndef memset
 //extern void* memset(void* dest, int c, size_t count);

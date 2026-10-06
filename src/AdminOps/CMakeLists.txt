@@ -1,6 +1,12 @@
-﻿if(NOT BS_ARCH STREQUAL "x64")
+if(NOT BS_ARCH STREQUAL "x64")
   return()
 endif()
+
+# Qt6 的 imported target 自带 /utf-8，与全局的 /source-charset:utf-8 互斥(cl D8016)；
+# 此处剔除全局那一个即可——/utf-8 本就包含“以 UTF-8 读源码”，本目录无需重复指定
+get_property(_compile_opts DIRECTORY PROPERTY COMPILE_OPTIONS)
+list(REMOVE_ITEM _compile_opts /source-charset:utf-8)
+set_property(DIRECTORY PROPERTY COMPILE_OPTIONS "${_compile_opts}")
 
 # for qt
 set(CMAKE_AUTOMOC OFF)

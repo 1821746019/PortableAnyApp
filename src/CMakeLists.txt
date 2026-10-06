@@ -1,4 +1,4 @@
-﻿# add deps
+# add deps
 find_package(spdlog CONFIG REQUIRED)
 link_libraries(spdlog::spdlog)
 find_package(PkgConfig REQUIRED)

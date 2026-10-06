@@ -1,4 +1,4 @@
-﻿module;
+module;
 
 #include <toml++/toml.hpp>
 export module ConfigMgr;

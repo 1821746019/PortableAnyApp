@@ -1,4 +1,4 @@
-﻿module;
+module;
 #include <Windows.h>
 export module GuardConfig;
 import std;

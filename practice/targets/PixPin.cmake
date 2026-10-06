@@ -1,4 +1,4 @@
-﻿if(NOT BS_ARCH STREQUAL "x64")
+if(NOT BS_ARCH STREQUAL "x64")
   return()
 endif()
 

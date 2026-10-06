@@ -1,4 +1,4 @@
-﻿module;
+module;
 #include <spdlog/sinks/win_eventlog_sink.h>
 #include <spdlog/spdlog.h>
 

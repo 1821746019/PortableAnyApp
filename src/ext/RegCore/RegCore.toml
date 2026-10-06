@@ -1,4 +1,4 @@
-﻿RegMode="Redirect" # available values: "Patch", "Virtualize", "Redirect"
+RegMode="Redirect" # available values: "Patch", "Virtualize", "Redirect"
 
 [reg]
 'HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Internet Download Manager'={redirect=""}

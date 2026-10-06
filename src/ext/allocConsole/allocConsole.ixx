@@ -1,4 +1,4 @@
-﻿module;
+module;
 #include <Windows.h>
 #include <Psapi.h>
 #include <toml++/toml.h>

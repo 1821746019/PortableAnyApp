@@ -1,4 +1,4 @@
-﻿#include "ntmin.h"
+#include "ntmin.h"
 
 #define ROUND_DOWN(n, align) \
      (((ULONG)n) & ~((align) - 1l))

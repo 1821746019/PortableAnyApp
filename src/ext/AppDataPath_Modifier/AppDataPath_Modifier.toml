@@ -1,4 +1,4 @@
-﻿# EXE_DIR is a bult-in variable
+# EXE_DIR is a bult-in variable
 [AppData]
 only_app_caller = true
 all= '''${EXE_DIR}\..\Data'''

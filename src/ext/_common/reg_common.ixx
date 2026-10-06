@@ -1,4 +1,4 @@
-﻿module;
+module;
 #include <ntdll.h>
 #pragma comment(lib, "ntdll.lib")
 export module reg_common;

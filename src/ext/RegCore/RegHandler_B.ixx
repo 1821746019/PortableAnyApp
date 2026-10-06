@@ -1,4 +1,4 @@
-﻿module;
+module;
 // Content: RegHandler.I interface definition
 #include <Windows.h>
 export module RegHandler_B;

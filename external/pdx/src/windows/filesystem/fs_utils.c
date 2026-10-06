@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include "../common/ntmin/ntmin.h" 
 #include "../../shared/strutils.h"
 #include "../../shared/dbg.h"

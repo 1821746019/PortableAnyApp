@@ -1,4 +1,4 @@
-﻿function(bs_add_subdir_if_exist subdir_list)
+function(bs_add_subdir_if_exist subdir_list)
 	foreach(child ${subdir_list})
 		if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${child} AND
            EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${child}/CMakeLists.txt")

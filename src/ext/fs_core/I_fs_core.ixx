@@ -1,4 +1,4 @@
-﻿export module I_fs_core;
+export module I_fs_core;
 
 import std;
 import Hooker;

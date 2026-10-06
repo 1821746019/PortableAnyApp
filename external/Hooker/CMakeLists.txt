@@ -1,4 +1,4 @@
-﻿set(lib_name "Hooker")
+set(lib_name "Hooker")
 bs_add_lib( ${lib_name}  "*.ixx" "*.cpp")
 
 # introduce detours lib

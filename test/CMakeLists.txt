@@ -1,4 +1,4 @@
-﻿link_libraries(ntdll.lib)
+link_libraries(ntdll.lib)
 add_library(dll_test SHARED "version_dll_test.cpp")
 target_link_libraries(dll_test "version")
 

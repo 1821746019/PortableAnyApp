@@ -1,4 +1,4 @@
-﻿module;
+module;
 #include <ws2tcpip.h>
 #include <Windows.h>
 #include <WinDNS.h>

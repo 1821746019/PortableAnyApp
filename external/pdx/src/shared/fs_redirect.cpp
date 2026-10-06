@@ -1,4 +1,4 @@
-﻿// Filesystem Redirection Logic
+// Filesystem Redirection Logic
 
 #include <string.h>
 #include <stdio.h>

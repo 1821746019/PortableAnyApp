@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #ifndef sprintf
 #include "sprintf.h"

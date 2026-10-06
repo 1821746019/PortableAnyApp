@@ -1,4 +1,4 @@
-﻿
+
 function(renameToArchDll target_name)
 	add_custom_command(TARGET ${target_name} POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E rename

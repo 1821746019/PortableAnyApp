@@ -1,4 +1,4 @@
-﻿// Filesystem Redirection Library
+// Filesystem Redirection Library
 #include <windows.h>
 extern "C" {
 

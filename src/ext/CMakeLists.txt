@@ -1,4 +1,4 @@
-﻿set(lib_name ext_common)
+set(lib_name ext_common)
 bs_add_lib(${lib_name} STATIC "_common/*.ixx")
 
 #set(lib_name extra)

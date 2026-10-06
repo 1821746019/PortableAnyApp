@@ -1,4 +1,4 @@
-﻿module;
+module;
 #include <Windows.h>
 export module _common.redirect;
 import std;

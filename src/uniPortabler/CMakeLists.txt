@@ -1,4 +1,4 @@
-﻿set(lib_name uniPortabler)
+set(lib_name uniPortabler)
 bs_add_lib(${lib_name} SHARED "*.ixx" "*.cpp" "*.def")
 #
 #set_target_properties(${lib_name} PROPERTIES OUTPUT_NAME "version")

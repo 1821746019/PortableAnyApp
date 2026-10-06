@@ -1,3 +1,3 @@
-﻿#include <QtCore>
+#include <QtCore>
 #include <QtWidgets>
 #include <QtNetwork>

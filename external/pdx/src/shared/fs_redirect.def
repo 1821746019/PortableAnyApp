@@ -1,4 +1,4 @@
-﻿EXPORTS
+EXPORTS
 fs_redirect
 enableFS_Redirect
 disableFS_Redirect

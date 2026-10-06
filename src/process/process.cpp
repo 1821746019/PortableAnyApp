@@ -1,4 +1,4 @@
-﻿#include <Windows.h>
+#include <Windows.h>
 #include <Wbemidl.h>
 #include <comdef.h>
 

@@ -1,4 +1,4 @@
-﻿set(dll_name PortableChromiumBased)
+set(dll_name PortableChromiumBased)
 set(exe_name "test")
 #set(out_name "winmm")
 file(GLOB src_list "*.cpp" "*.ixx" )

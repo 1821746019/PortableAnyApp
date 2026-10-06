@@ -1,4 +1,4 @@
-﻿set(dlls version;winmm;advapi32)
+set(dlls version;winmm;advapi32)
 
 
 set(lib_link_excluded_list "")

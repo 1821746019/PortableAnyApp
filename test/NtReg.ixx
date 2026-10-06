@@ -1,4 +1,4 @@
-﻿module;
+module;
 #include <ntdll.h>
 export module _;
 import std;

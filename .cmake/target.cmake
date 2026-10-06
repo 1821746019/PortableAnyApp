@@ -1,4 +1,4 @@
-﻿function(get_dir_targetList _targetList dirPath )
+function(get_dir_targetList _targetList dirPath )
     set(target_list)
     #判断是否end with **来确定匹配模式
     string(REGEX MATCH "\\*\\*$" MR ${dirPath})

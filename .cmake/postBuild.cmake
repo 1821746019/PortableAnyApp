@@ -1,21 +1,21 @@
 function(copyToInstallDir targetName baseDir)
-     #Ä¬ÈÏÖ±½ÓÊ¹ÓÃÄ¿±êÎÄ¼şÃû
+     #é»˜è®¤ç›´æ¥ä½¿ç”¨ç›®æ ‡æ–‡ä»¶å
     set(targetFilePath "${PROJECT_SOURCE_DIR}/install/${BS_ARCH}/${baseDir}/$<TARGET_FILE_NAME:${targetName}>")
-    # ¹²Ïí¿â£¨DLL£©ÒªÎªx86µÄdllÌí¼Ó.x86
+    # å…±äº«åº“ï¼ˆDLLï¼‰è¦ä¸ºx86çš„dllæ·»åŠ .x86
     get_target_property(targetType ${targetName} TYPE)
     if(targetType STREQUAL "SHARED_LIBRARY")
         
-        # Ìí¼Óºó×ºÂß¼­£¬»ùÓÚ¼Ü¹¹Ìí¼Óºó×º
+        # æ·»åŠ åç¼€é€»è¾‘ï¼ŒåŸºäºæ¶æ„æ·»åŠ åç¼€
         set(targetFilePath "${PROJECT_SOURCE_DIR}/install/${BS_ARCH}/${baseDir}/$<TARGET_FILE_NAME:${targetName}>$<$<STREQUAL:${BS_ARCH},x86>:.${BS_ARCH}>")
         
-        # Õë¶Ô DLL Ìí¼Ó .dll ºó×º
+        # é’ˆå¯¹ DLL æ·»åŠ  .dll åç¼€
         if(WIN32)
             set(targetFilePath "${targetFilePath}.dll")
         endif()
        
     endif()
 
-    # Ìí¼Ó×Ô¶¨ÒåÃüÁî£¬¿½±´ÎÄ¼şµ½°²×°Ä¿Â¼
+    # æ·»åŠ è‡ªå®šä¹‰å‘½ä»¤ï¼Œæ‹·è´æ–‡ä»¶åˆ°å®‰è£…ç›®å½•
     add_custom_command(TARGET ${targetName} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "$<TARGET_FILE:${targetName}>"

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <stddef.h>
 #include "../common/ntmin/ntmin.h" 
 

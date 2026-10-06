@@ -1,4 +1,4 @@
-﻿#include <Windows.h>
+#include <Windows.h>
 #include <spdlog/sinks/win_eventlog_sink.h>
 #include <spdlog/spdlog.h>
 // #include <filesystem>

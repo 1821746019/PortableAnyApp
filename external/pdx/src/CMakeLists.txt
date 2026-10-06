@@ -1,4 +1,4 @@
-﻿# Windows库
+# Windows库
 link_libraries(ntdll)
 if(bit EQUAL 64)
     add_definitions(-D__x86_64__)

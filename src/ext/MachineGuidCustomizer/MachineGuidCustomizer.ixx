@@ -1,4 +1,4 @@
-﻿module;
+module;
 #include <ntdll.h>
 #include <Windows.h>
 #include <toml++/toml.hpp>

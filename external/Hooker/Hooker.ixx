@@ -1,4 +1,4 @@
-﻿module;
+module;
 #include <stdexcept>
 #include <deque>
 #include <unordered_set>

@@ -1,4 +1,4 @@
-﻿module;
+module;
 #include <Windows.h>
 #include <ShlObj.h>
 #include <toml++/toml.hpp>

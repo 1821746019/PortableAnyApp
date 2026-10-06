@@ -1,4 +1,4 @@
-﻿module;
+module;
 //#include  <Windows.h>
 //#include <string>
 export module winmmFunc;

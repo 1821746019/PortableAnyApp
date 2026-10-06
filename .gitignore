@@ -1,4 +1,4 @@
-﻿*.pdb
+*.pdb
 *.idb
 build/
 _insights/

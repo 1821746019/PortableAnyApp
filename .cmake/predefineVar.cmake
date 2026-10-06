@@ -1,4 +1,4 @@
-﻿if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
     set(BS_ARCH "x64")
 else()
     set(BS_ARCH "x86")
