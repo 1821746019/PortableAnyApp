@@ -1,0 +1,12 @@
+---
+Checks: >
+  -*
+  ,clang-diagnostic-*
+  ,-readability-convert-member-functions-to-static
+  ,-readability-redundant-string-cstr
+  ,-readability-string-compare
+  ,-modernize-use-starts-ends-with
+  ,-cppcoreguidelines-pro-type-member-init
+WarningsAsErrors: ''
+HeaderFilterRegex: ''
+...

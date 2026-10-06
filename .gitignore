@@ -4,7 +4,15 @@ build/
 _insights/
 install/
 .vs/
-.idea/
+# JetBrains IDE (.idea)
+.idea/**
+!.idea/
+!.idea/inspectionProfiles/
+!.idea/inspectionProfiles/Project_Default.xml
+!.idea/editor.xml
+!.idea/codeStyles/
+!.idea/codeStyles/**
+!.idea/.gitignore
 *.user
 _depre/
 artifacts/
