@@ -1,4 +1,8 @@
-﻿# for qt
+﻿if(NOT BS_ARCH STREQUAL "x64")
+  return()
+endif()
+
+# for qt
 set(CMAKE_AUTOMOC OFF)
 set(CMAKE_AUTORCC OFF)
 set(CMAKE_AUTOUIC OFF)

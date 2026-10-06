@@ -58,17 +58,19 @@ endfunction()
 
 #set(CMAKE_PREFIX_PATH "${_OLD_CMAKE_PREFIX_PATH}" CACHE STRING "首选路径前缀" FORCE)
 #unset(_OLD_CMAKE_PREFIX_PATH)
-find_package(Qt6 
-    COMPONENTS Core Network Widgets Gui 
-    REQUIRED
-    PATHS "D:/environment/cpp/Qt/Qt6/_cur"
-    NO_DEFAULT_PATH
-)
+if(BS_ARCH STREQUAL "x64")
+  find_package(Qt6 
+      COMPONENTS Core Network Widgets Gui 
+      REQUIRED
+      PATHS "D:/environment/cpp/Qt/Qt6/_cur"
+      NO_DEFAULT_PATH
+  )
 
-find_package(Qt5 
-    COMPONENTS Core Network Widgets Gui 
-    REQUIRED
-)
+  find_package(Qt5 
+      COMPONENTS Core Network Widgets Gui 
+      REQUIRED
+  )
+endif()
 
 #detours
 find_path(DETOURS_INCLUDE_DIRS "detours/detours.h")

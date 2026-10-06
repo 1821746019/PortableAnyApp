@@ -26,6 +26,10 @@ endforeach()
 # 每个文件夹(除前缀为_的)为一个target
 foreach(i ${dir_list})
 
+  if(NOT BS_ARCH STREQUAL "x64" AND ${i} MATCHES "Qt[56]$")
+      continue()
+  endif()
+
   bs_add_lib(${i} SHARED ${i}/*.ixx ${i}/*.cpp)
   set_target_properties(${i} PROPERTIES FOLDER "ext")
   

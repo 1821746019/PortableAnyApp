@@ -1,4 +1,8 @@
-﻿get_filename_component(currFileStem ${CMAKE_CURRENT_LIST_FILE} NAME_WLE)
+﻿if(NOT BS_ARCH STREQUAL "x64")
+  return()
+endif()
+
+get_filename_component(currFileStem ${CMAKE_CURRENT_LIST_FILE} NAME_WLE)
 set(currTarget "_practice-${currFileStem}")
 
 set(dstExePath [[D:\Program\Productivity\Utils\PixPin\PixPin_v2.2\App\PixPin.exe]])

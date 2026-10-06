@@ -1,5 +1,5 @@
 ﻿
-BS_ADD_ALL_SUBDIR_IF_EXIST("std")
+BS_ADD_ALL_SUBDIR_IF_EXIST()
 
 set(lib_name winreg)
 #bs_add_lib(${lib_name} STATIC winreg.cpp)
